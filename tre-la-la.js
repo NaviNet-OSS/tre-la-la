@@ -12,7 +12,7 @@ AJS.$(document).ready(function() {
 		},
 		{
 			value : 70,
-			color : "#E2EAE9"
+			color : "#00CC66"
 		},
 	]
 	
