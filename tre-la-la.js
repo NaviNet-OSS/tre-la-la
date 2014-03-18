@@ -1,8 +1,58 @@
 // This is Tre-la-la for Trello.
 // Leverage Confluence AJS.$ to access JQuery
+function createPercentageCompleteChart(id, complete) {
+	remainder = 100.0 - complete
+	title = complete.toString(1) + "%"
+	
+    var colors = ['#F7464A', '#00CC66'];
+    var chart = new Highcharts.Chart({
+        chart: {
+            renderTo: id,
+            type: 'pie',
+            height: 250,
+            width: 250,
+            borderRadius: 0
+        },
+        credits: {
+            enabled: false
+        },
+        title: {
+            text: title,
+            align: 'center',
+            verticalAlign: 'middle'
+        },
+        tooltip: false,
+        plotOptions: {
+            pie: {
+                borderWidth: 6,
+                startAngle: 90,
+                innerSize: '55%',
+                size: '100%',
+                shadow: false,
+                dataLabels: false,
+                stickyTracking: false,
+                states: {
+                    hover: {
+                        enabled: true
+                    }
+                }
+            }
+        },
+
+        series: [{
+            data: [
+                {y:remainder, color: colors[0] },
+                {y:complete, color: colors[1] }
+            ]
+        }]
+    });
+}
+
 AJS.$(document).ready(function() {
 	//var obj = document.getElementById('tre-la-la');
 	//obj.innerHTML = "I'm here";
+	
+	createPercentageCompleteChart('tre-la-la-percent-complete-highcharts', 85)
 	
 	var data = [
 		{
