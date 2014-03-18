@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Tre-la-la</title>
+<script src="http://code.jquery.com/jquery-1.11.0.min.js"></script>
+<script src="http://momentjs.com/downloads/moment.min.js"></script>
+<script src="https://api.trello.com/1/client.js?key=00f1dd1e00000f1dd1e00000f1dd1e00&dummy=.js"></script>
+    <script>
+        var confidence = 'Medium';
+        var kickoffDate = '3/10/2014';
+        var releaseReadyDate = 'TBD';
+        var releasedOn = 'TBD';
+        var plannedStoryUnits = 16;
+        var boardId = 'Dw47Ej5u';
+
+        var getStoryUnits = function(cards) {
+            var storyUnits = 0;
+            $.each(cards, function(ix, card) {
+                var size = card.name.match(/\[([SML])\]/)[1];
+                switch (size) {
+                    case 'S':
+                        storyUnits += 1;
+                        break;
+                    case 'M':
+                        storyUnits += 2;
+                        break;
+                    case 'L':
+                        storyUnits += 4;
+                        break;
+                }
+            });
+            return storyUnits;
+        };
+
+        var addWeekdays = function(date, days) {
+            date = moment(date); // use a clone
+            while (days > 0) {
+                date = date.add(1, 'days');
+                // decrease "days" only if it's a weekday.
+                if (date.isoWeekday() !== 6 && date.isoWeekday() !== 7) {
+                    days -= 1;
+                }
+            }
+            return date;
+        };
+
+        $(function() {
+            var currentStoryUnits = 0;
+            var storyUnitsComplete = 0;
+            var teamVelocity = 1;
+
+            Trello.get('boards/' + boardId + '/lists?cards=open', function(lists) {
+                $.each(lists, function(ix, list) {
+                    if (list.name.indexOf('Analysis Complete') != -1
+                        || list.name.indexOf('Implementation') != -1
+                        || list.name.indexOf('Verification') != -1
+                        || list.name.indexOf('Release Ready') != -1) {
+                        currentStoryUnits += getStoryUnits(list.cards);
+                    }
+                    if (list.name.indexOf('Release Ready') != -1) {
+                        storyUnitsComplete += getStoryUnits(list.cards);
+                    }
+                });
+
+                var storyUnitsLeft = currentStoryUnits - storyUnitsComplete;
+                if (teamVelocity != 0) {
+                    var projectedDoneDate = addWeekdays(new Date(), storyUnitsLeft/teamVelocity);
+                }
+
+                $('body').html(
+                    '<b>Confidence:</b> ' + confidence + ' ' +
+                    '<b>Target date:</b> ' + moment(projectedDoneDate).format("MM/DD/YYYY") + ' ' +
+                    '<b>Kickoff Date:</b> ' + kickoffDate + ' ' +
+                    '<b>Release Ready Date:</b> ' + releaseReadyDate + ' ' +
+                    '<b>Released On:</b> ' + releasedOn + ' ' +
+                    '<b>Planned Story Units:</b> ' + plannedStoryUnits + ' ' +
+                    '<b>Revised Story Units:</b> ' + currentStoryUnits + ' ' +
+                    '<b>Story Units Complete:</b> ' + storyUnitsComplete + ' ' +
+                    '<b>Percent Complete (Actual):</b> ' + (storyUnitsComplete / currentStoryUnits * 100).toFixed(1) + '%');
+            });
+        });
+    </script>
+  </head>
+  <body>
+  </body>
+</html>
