@@ -1,0 +1,25 @@
+<html>
+    <head>
+        <title>Authorize test</title>
+        <!-- The client library requires jQuery  -->
+        <script src="http://code.jquery.com/jquery-1.7.1.min.js"></script>
+        <script src="https://api.trello.com/1/client.js?key=f5613f90a2a2b7b56334453aeff8f858"></script>        
+    </head>
+    <body>
+        <input type="text" id="token-field">
+        <script>
+            Trello.authorize({
+                type: "popup",
+                name: "Tre-la-la client.js authorization test",
+                persist: true,
+                interactive: true,
+                scope: { read: true, write: true, account: false },
+                expiration: "1hour",
+                success: function() { $('#token-field').val(Trello.token()); },
+                error: function() { alert('fail'); }
+
+            });
+
+        </script>
+    </body>
+</html>
