@@ -2,7 +2,7 @@
 // Leverage Confluence AJS.$ to access JQuery
 function createPercentageCompleteChart(id, complete) {
 	remainder = 100.0 - complete
-	title = complete.toString(1) + "%"
+	title = complete.toString(2) + "%"
 	
     var colors = ['#F7464A', '#00CC66'];
     var chart = new Highcharts.Chart({
