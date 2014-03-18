@@ -11,22 +11,9 @@ AJS.$(document).ready(function() {
 			color:"#F7464A"
 		},
 		{
-			value : 50,
+			value : 70,
 			color : "#E2EAE9"
 		},
-		{
-			value : 100,
-			color : "#D4CCC5"
-		},
-		{
-			value : 40,
-			color : "#949FB1"
-		},
-		{
-			value : 120,
-			color : "#4D5360"
-		}
-
 	]
 	
 	//Get the context of the canvas element we want to select
