@@ -32,7 +32,7 @@ function createPercentageCompleteChart(id, complete) {
                 stickyTracking: false,
                 states: {
                     hover: {
-                        enabled: true
+                        enabled: false
                     }
                 }
             }
