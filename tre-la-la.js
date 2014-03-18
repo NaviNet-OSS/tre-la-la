@@ -5,9 +5,8 @@ function createPercentageCompleteChart(id, complete) {
 	title = complete.toString() + "%"
 	
     var colors = ['#F7464A', '#00CC66'];
-    var chart = new Highcharts.Chart({
+    $(id).highcharts({
         chart: {
-            renderTo: id,
             type: 'pie',
             height: 250,
             width: 250,
