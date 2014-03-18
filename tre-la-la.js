@@ -15,7 +15,7 @@ function drawChart() {
 	  vAxis: {title: 'Year',  titleTextStyle: {color: 'red'}}
 	};
 
-	var chart = new google.visualization.BarChart(document.getElementById('tre-la-la'));
+	var chart = new google.visualization.BarChart(document.getElementById('tre-la-la-google'));
 	chart.draw(data, options);
 }
 
@@ -36,10 +36,10 @@ AJS.$(document).ready(function() {
 	]
 	
 	//Get the context of the canvas element we want to select
-	var ctx = document.getElementById("my-canvas").getContext("2d");
+	var ctx = document.getElementById("tre-la-la-percent-complete").getContext("2d");
 	var myNewChart = new Chart(ctx).Doughnut(data);
 	
-	        $('#container').highcharts({
+	        $('#tre-la-la-cfd').highcharts({
             chart: {
                 type: 'area'
             },
