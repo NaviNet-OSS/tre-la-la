@@ -18,7 +18,8 @@ function createPercentageCompleteChart(id, complete) {
         title: {
             text: title,
             align: 'center',
-            verticalAlign: 'middle'
+            verticalAlign: 'middle',
+			style: { fontSize: '24px' }
         },
         tooltip: false,
         plotOptions: {
