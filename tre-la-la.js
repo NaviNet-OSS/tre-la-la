@@ -1,7 +1,7 @@
 // This is Tre-la-la for Trello.
-google.load("visualization", "1", {packages:["corechart"]});
+google.load("visualization", "1.1", {packages:["corechart"]});
 google.setOnLoadCallback(drawChart);
-	function drawChart() {
+function drawChart() {
 	var data = google.visualization.arrayToDataTable([
 	  ['Year', 'Sales', 'Expenses'],
 	  ['2004',  1000,      400],
