@@ -5,7 +5,7 @@
 var onAuthorize = function() {
     updateLoggedIn();
     //$("#output").empty();
-    
+
     Trello.members.get("me", function(member){
         $("#fullName").text(member.fullName);
     });
@@ -15,14 +15,14 @@ var onAuthorize = function() {
 var updateLoggedIn = function() {
     var isLoggedIn = Trello.authorized();
     //$("#loggedout").toggle(!isLoggedIn);
-    //$("#loggedin").toggle(isLoggedIn);        
+    //$("#loggedin").toggle(isLoggedIn);
 };
-    
+
 var logout = function() {
     Trello.deauthorize();
     updateLoggedIn();
 };
-                          
+
 Trello.authorize({
     interactive:false,
     success: onAuthorize
@@ -33,7 +33,7 @@ function createPercentageCompleteChart(id, complete, size) {
 	remainder = 100.0 - complete
 	title = complete.toString() + "%"
 	fontSize = size < 180 ? '16px' : '24px'
-	
+
     var colors = [ '#BBBBBB', '#00CC66', '#F7464A'];
     $(id).highcharts({
         chart: {
@@ -306,5 +306,130 @@ function createBoardSummary(boardId, divId) {
 							  storyUnitsComplete);
 				}
 			});
+
+function addWeekdays(date, days) {
+    date = moment(date); // use a clone
+    while (days > 0) {
+        date = date.add(1, 'days');
+        // decrease "days" only if it's a weekday.
+        if (date.isoWeekday() !== 6 && date.isoWeekday() !== 7) {
+            days -= 1;
+        }
+    }
+    return date;
+};
+
+function isActiveCol(list) {
+    return list != null
+        && (list.name.indexOf('Analysis Complete') != -1
+            || list.name.indexOf('Implementation') != -1
+            || list.name.indexOf('Verification') != -1
+            || list.name.indexOf('Release Ready') != -1);
+};
+
+function getFirstLineData() {
+    var deferred = $.Deferred();
+
+    Trello
+        .get('boards/' + BOARD_ID + '/lists?cards=open')
+        .success(function(lists) {
+            var analysisCompleteColId = null;
+
+            $.each(lists, function(ix, list) {
+                if (isActiveCol(list)) {
+                    currentStoryUnits += getStoryUnits(list.cards);
+                }
+
+                if (list.name.indexOf('Analysis Complete') != -1) {
+                    analysisCompleteColId = list.id;
+                }
+
+                if (list.name.indexOf('Release Ready') != -1) {
+                    storyUnitsComplete += getStoryUnits(list.cards);
+                }
+
+                if (list.name.indexOf('Meta') != -1) {
+                    $.each(list.cards, function(ix, card) {
+                        var match = card.name.match(/^Confidence:\ (.*)$/);
+                        if (match != null && match.length >= 2) {
+                            confidence = match[1];
+                        }
+
+                        match = card.name.match(/^Kickoff\ Date:\ (.*)$/);
+                        if (match != null && match.length >= 2) {
+                            kickoffDate = match[1];
+                        }
+
+                        match = card.name.match(/^Analysis\ Complete\ Date:\ (.*)$/);
+                        if (match != null && match.length >= 2) {
+                            analysisCompleteDate = match[1];
+                        }
+
+                        match = card.name.match(/^Team\ Velocity\ \(Points\/Day\):\ (.*)$/);
+                        if (match != null && match.length >= 2) {
+                            teamVelocity = match[1];
+                        }
+
+                        match = card.name.match(/^Release\ Ready\ Date:\ (.*)$/);
+                        if (match != null && match.length >= 2) {
+                            releaseReadyDate = match[1];
+                        }
+
+                        match = card.name.match(/^Releases\ On:\ (.*)$/);
+                        if (match != null && match.length >= 2) {
+                            releasedOn = match[1];
+                        }
 	});
+                }
+            });
+
+            var storyUnitsLeft = currentStoryUnits - storyUnitsComplete;
+            var projectedDoneDate = addWeekdays(new Date(), storyUnitsLeft / teamVelocity);
+
+            if (analysisCompleteDate !== 'TBD') {
+                var before = moment(analysisCompleteDate).add('days', 1).toISOString();
+                Trello
+                    .get('boards/' + BOARD_ID + '/actions', { before: before, limit: 1000 })
+                    .success(function(actions) {
+                        var cards = [];
+                        var cardIds = [];
+                        $.each(actions, function(i, action) {
+                            if (action.data.card != null
+                                && cardIds.indexOf(action.data.card.id) == -1
+                                && (action.data.list == null || isActiveCol(action.data.list))
+                                && (action.data.listAfter == null || isActiveCol(action.data.listAfter))) {
+                                cards.push(action.data.card);
+                                cardIds.push(action.data.card.id);
+                            }
+                        });
+                        plannedStoryUnits = getStoryUnits(cards);
+
+                        deferred.resolve({
+                            confidence: confidence,
+                            projectedDoneDate: moment(projectedDoneDate).format("MM/DD/YYYY"),
+                            kickoffDate: kickoffDate,
+                            releaseReadyDate: releaseReadyDate,
+                            releasedOn: releasedOn,
+                            plannedStoryUnits: plannedStoryUnits,
+                            currentStoryUnits: currentStoryUnits,
+                            storyUnitsComplete: storyUnitsComplete,
+                            percentComplete: (storyUnitsComplete / currentStoryUnits * 100).toFixed(1) + '%'
+                        });
+                    });
+            } else {
+                deferred.resolve({
+                    confidence: confidence,
+                    projectedDoneDate: moment(projectedDoneDate).format("MM/DD/YYYY"),
+                    kickoffDate: kickoffDate,
+                    releaseReadyDate: releaseReadyDate,
+                    releasedOn: releasedOn,
+                    plannedStoryUnits: plannedStoryUnits,
+                    currentStoryUnits: currentStoryUnits,
+                    storyUnitsComplete: storyUnitsComplete,
+                    percentComplete: (storyUnitsComplete / currentStoryUnits * 100).toFixed(1) + '%'
+                });
+            }
+        });
+
+    return deferred.promise();
 }
