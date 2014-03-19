@@ -6,6 +6,7 @@
         <script src="https://api.trello.com/1/client.js?key=f5613f90a2a2b7b56334453aeff8f858"></script>        
         <script src="http://trello-cfd.azurewebsites.net/bundles/highcharts?v=5k1FR7lWLeCY4R3SEEXFlV_mvXFFun6m07oIcBlI_4w1"></script>
         <script src="http://momentjs.com/downloads/moment.min.js"></script>
+        <script src="tre-la-la.js"></script>
     </head>
     <body>
         <input type="text" id="token-field">
@@ -38,14 +39,12 @@
                 Trello.get('boards/' + data.boardId + '/lists')
                   .success(function(queryResult) {
                     listNames = $.map(queryResult, function(list, idx) {
-                        if(list.name === "Meta") return null;
+                        if(!isActiveCol(list)) return null;
                         return list.name;
                     });
                     listMap = {};
                     $.each(queryResult, function(idx, list) {
-                    console.log(list.name + " " + list.id);
-                    console.log(list);
-                        if(list.name === "Meta") return null;
+                        if(!isActiveCol(list)) return null;
                         
                         listMap[list.id] = list.name;
                     });
@@ -139,11 +138,11 @@
                 
                 if(!ret) return null;
                 
-                if(ret.type === 'updateCard' && ret.data.listAfter && ret.data.listAfter.name !== 'Meta') {
+                if(ret.type === 'updateCard' && ret.data.listAfter && isActiveCol(ret.data.listAfter)) {
                     return { name: card.name, id: card.id, date: moment(ret.date), newColumn: ret.data.listAfter.id };
                 } else if(ret.type === 'updateCard' && ret.data.card.closed) {
                     return { name: card.name, id: card.id, date: moment(ret.date), newColumn: null };
-                } else if (ret.type === 'createCard' && ret.data.list.name !== 'Meta') {
+                } else if (ret.type === 'createCard' && isActiveCol(ret.data.list)) {
                     return { name: card.name, id: card.id, date: moment(ret.date), newColumn: ret.data.list.id };
                 }
             }
