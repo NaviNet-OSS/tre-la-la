@@ -139,9 +139,11 @@ function createCfdChart(id) {
 AJS.$(document).ready(function() {
 	createPercentageCompleteChart('#tre-la-la-percent-complete', 85);
 	createCfdChart('#tre-la-la-cfd');
+	/* HACK
 	Trello.authorize({
 		type: "popup",
 		success: onAuthorize,
 		scope: { write: true, read: true }
 	});
+	*/
 });
