@@ -29,6 +29,8 @@ Trello.authorize({
 });
 */
 
+var $ = AJS.$;
+
 function createPercentageCompleteChart(id, complete, size) {
     remainder = 100.0 - complete
     title = complete.toString() + "%"
@@ -181,7 +183,7 @@ function getStoryUnits(cards) {
     return storyUnits;
 };
 
-function getBoardSummaryData() {
+function getBoardSummaryData(boardId) {
     var confidence = 'TBD';
     var kickoffDate = 'TBD';
     var analysisCompleteDate = 'TBD';
@@ -195,7 +197,7 @@ function getBoardSummaryData() {
     var deferred = $.Deferred();
 
     Trello
-        .get('boards/' + BOARD_ID + '/lists?cards=open')
+        .get('boards/' + boardId + '/lists?cards=open')
         .success(function(lists) {
             var analysisCompleteColId = null;
 
@@ -253,7 +255,7 @@ function getBoardSummaryData() {
             if (analysisCompleteDate !== 'TBD') {
                 var before = moment(analysisCompleteDate).add('days', 1).toISOString();
                 Trello
-                    .get('boards/' + BOARD_ID + '/actions', { before: before, limit: 1000 })
+                    .get('boards/' + boardId + '/actions', { before: before, limit: 1000 })
                     .success(function(actions) {
                         var cards = [];
                         var cardIds = [];
@@ -300,9 +302,16 @@ function getBoardSummaryData() {
     return deferred.promise();
 }
 
-function buildBoardSummary() {
-    getBoardSummaryData().done(function(data) {
-        $('body').append(
+
+
+//********************************************
+// jQuery Plugins
+//********************************************
+
+$.fn.trelalaBoardSummary = function(boardId) {
+    var $this = this;
+    getBoardSummaryData(boardId).done(function(data) {
+        $this.html(
             '<b>Confidence:</b> ' + data.confidence + ' ' +
             '<b>Target date:</b> ' + data.projectedDoneDate + ' ' +
             '<b>Kickoff Date:</b> ' + data.kickoffDate + ' ' +
@@ -314,4 +323,7 @@ function buildBoardSummary() {
             '<b>Story Units Complete:</b> ' + data.storyUnitsComplete + ' ' +
             '<b>Percent Complete (Actual):</b> ' + data.percentComplete);
     });
-}
+    return this;
+};
+
+
