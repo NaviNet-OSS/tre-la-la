@@ -30,9 +30,9 @@ Trello.authorize({
 */
 
 function createPercentageCompleteChart(id, complete, size) {
-	remainder = 100.0 - complete
-	title = complete.toString() + "%"
-	fontSize = size < 180 ? '16px' : '24px'
+    remainder = 100.0 - complete
+    title = complete.toString() + "%"
+    fontSize = size < 180 ? '16px' : '24px'
 
     var colors = [ '#BBBBBB', '#00CC66', '#F7464A'];
     $(id).highcharts({
@@ -49,7 +49,7 @@ function createPercentageCompleteChart(id, complete, size) {
             text: title,
             align: 'center',
             verticalAlign: 'middle',
-			style: { fontSize: fontSize }
+            style: { fontSize: fontSize }
         },
         tooltip: false,
         plotOptions: {
@@ -79,233 +79,66 @@ function createPercentageCompleteChart(id, complete, size) {
 }
 
 function createCfdChart(id) {
-	$(id).highcharts({
-		chart: {
-			type: 'area'
-		},
-		title: {
-			text: 'Historic and Estimated Worldwide Population Growth by Region'
-		},
-		subtitle: {
-			text: 'Source: Wikipedia.org'
-		},
-		xAxis: {
-			categories: ['1750', '1800', '1850', '1900', '1950', '1999', '2050'],
-			tickmarkPlacement: 'on',
-			title: {
-				enabled: false
-			}
-		},
-		yAxis: {
-			title: {
-				text: 'Billions'
-			},
-			labels: {
-				formatter: function() {
-					return this.value / 1000;
-				}
-			}
-		},
-		tooltip: {
-			shared: true,
-			valueSuffix: ' millions'
-		},
-		plotOptions: {
-			area: {
-				stacking: 'normal',
-				lineColor: '#666666',
-				lineWidth: 1,
-				marker: {
-					lineWidth: 1,
-					lineColor: '#666666'
-				}
-			}
-		},
-		series: [{
-			name: 'Asia',
-			data: [502, 635, 809, 947, 1402, 3634, 5268]
-		}, {
-			name: 'Africa',
-			data: [106, 107, 111, 133, 221, 767, 1766]
-		}, {
-			name: 'Europe',
-			data: [163, 203, 276, 408, 547, 729, 628]
-		}, {
-			name: 'America',
-			data: [18, 31, 54, 156, 339, 818, 1201]
-		}, {
-			name: 'Oceania',
-			data: [2, 2, 2, 6, 13, 30, 46]
-		}]
-	});
+    $(id).highcharts({
+        chart: {
+            type: 'area'
+        },
+        title: {
+            text: 'Historic and Estimated Worldwide Population Growth by Region'
+        },
+        subtitle: {
+            text: 'Source: Wikipedia.org'
+        },
+        xAxis: {
+            categories: ['1750', '1800', '1850', '1900', '1950', '1999', '2050'],
+            tickmarkPlacement: 'on',
+            title: {
+                enabled: false
+            }
+        },
+        yAxis: {
+            title: {
+                text: 'Billions'
+            },
+            labels: {
+                formatter: function() {
+                    return this.value / 1000;
+                }
+            }
+        },
+        tooltip: {
+            shared: true,
+            valueSuffix: ' millions'
+        },
+        plotOptions: {
+            area: {
+                stacking: 'normal',
+                lineColor: '#666666',
+                lineWidth: 1,
+                marker: {
+                    lineWidth: 1,
+                    lineColor: '#666666'
+                }
+            }
+        },
+        series: [{
+            name: 'Asia',
+            data: [502, 635, 809, 947, 1402, 3634, 5268]
+        }, {
+            name: 'Africa',
+            data: [106, 107, 111, 133, 221, 767, 1766]
+        }, {
+            name: 'Europe',
+            data: [163, 203, 276, 408, 547, 729, 628]
+        }, {
+            name: 'America',
+            data: [18, 31, 54, 156, 339, 818, 1201]
+        }, {
+            name: 'Oceania',
+            data: [2, 2, 2, 6, 13, 30, 46]
+        }]
+    });
 }
-
-function createBoardSummary(boardId, divId) {
-	var confidence = 'TBD';
-	var kickoffDate = 'TBD';
-	var analysisCompleteDate = 'TBD';
-	var releaseReadyDate = 'TBD';
-	var releasedOn = 'TBD';
-	var plannedStoryUnits = 0;
-	var currentStoryUnits = 0;
-	var storyUnitsComplete = 0;
-	var teamVelocity = 1;
-
-	var getStoryUnits = function(cards) {
-		var storyUnits = 0;
-		$.each(cards, function(i, card) {
-			var match = card.name.match(/\[([SML])\]/);
-			if (match != null) {
-				switch (match[1]) {
-					case 'S':
-						storyUnits += 1;
-						break;
-					case 'M':
-						storyUnits += 2;
-						break;
-					case 'L':
-						storyUnits += 4;
-						break;
-				}
-			}
-		});
-		return storyUnits;
-	};
-
-	var addWeekdays = function(date, days) {
-		date = moment(date); // use a clone
-		while (days > 0) {
-			date = date.add(1, 'days');
-			// decrease "days" only if it's a weekday.
-			if (date.isoWeekday() !== 6 && date.isoWeekday() !== 7) {
-				days -= 1;
-			}
-		}
-		return date;
-	};
-
-	var isActiveCol = function(list) {
-		return list != null
-			&& (list.name.indexOf('Analysis Complete') != -1
-				|| list.name.indexOf('Implementation') != -1
-				|| list.name.indexOf('Verification') != -1
-				|| list.name.indexOf('Release Ready') != -1);
-	};
-
-	var spitItOut = function(confidence,
-							 projectedDoneDate,
-							 kickoffDate,
-							 releaseReadyDate,
-							 releasedOn,
-							 plannedStoryUnits,
-							 currentStoryUnits,
-							 storyUnitsComplete) {
-		$(divId).html(
-			'<b>Confidence:</b> ' + confidence + ' ' +
-			'<b>Target date:</b> ' + moment(projectedDoneDate).format("MM/DD/YYYY") + ' ' +
-			'<b>Kickoff Date:</b> ' + kickoffDate + ' ' +
-			'<b>Release Ready Date:</b> ' + releaseReadyDate + ' ' +
-			'<b>Released On:</b> ' + releasedOn + ' ' +
-			'<b>Planned Story Units:</b> ' + plannedStoryUnits + ' ' +
-			'<b>Revised Story Units:</b> ' + currentStoryUnits + ' ' +
-			'<b>Story Units Complete:</b> ' + storyUnitsComplete + ' ' +
-			'<b>Percent Complete (Actual):</b> ' + (storyUnitsComplete / currentStoryUnits * 100).toFixed(1) + '%');
-	}
-
-	$(function() {
-		Trello
-			.get('boards/' + boardId + '/lists?cards=open')
-			.success(function(lists) {
-				var analysisCompleteColId = null;
-
-				$.each(lists, function(ix, list) {
-					if (isActiveCol(list)) {
-						currentStoryUnits += getStoryUnits(list.cards);
-					}
-
-					if (list.name.indexOf('Analysis Complete') != -1) {
-						analysisCompleteColId = list.id;
-					}
-
-					if (list.name.indexOf('Release Ready') != -1) {
-						storyUnitsComplete += getStoryUnits(list.cards);
-					}
-
-					if (list.name.indexOf('Meta') != -1) {
-						$.each(list.cards, function(ix, card) {
-							var match = card.name.match(/^Confidence:\ (.*)$/);
-							if (match != null && match.length >= 2) {
-								confidence = match[1];
-							}
-
-							match = card.name.match(/^Kickoff\ Date:\ (.*)$/);
-							if (match != null && match.length >= 2) {
-								kickoffDate = match[1];
-							}
-
-							match = card.name.match(/^Analysis\ Complete\ Date:\ (.*)$/);
-							if (match != null && match.length >= 2) {
-								analysisCompleteDate = match[1];
-							}
-
-							match = card.name.match(/^Team\ Velocity\ \(Points\/Day\):\ (.*)$/);
-							if (match != null && match.length >= 2) {
-								teamVelocity = match[1];
-							}
-
-							match = card.name.match(/^Release\ Ready\ Date:\ (.*)$/);
-							if (match != null && match.length >= 2) {
-								releaseReadyDate = match[1];
-							}
-
-							match = card.name.match(/^Releases\ On:\ (.*)$/);
-							if (match != null && match.length >= 2) {
-								releasedOn = match[1];
-							}
-						});
-					}
-				});
-
-				var storyUnitsLeft = currentStoryUnits - storyUnitsComplete;
-				var projectedDoneDate = addWeekdays(new Date(), storyUnitsLeft / teamVelocity);
-
-				if (analysisCompleteDate !== 'TBD') {
-					var before = moment(analysisCompleteDate).add('days', 1).toISOString();
-					Trello
-						.get('boards/' + boardId + '/actions', { before: before, limit: 1000 })
-						.success(function(actions) {
-							var cards = [];
-							var cardIds = [];
-							$.each(actions, function(i, action) {
-								if (action.data.card != null
-									&& cardIds.indexOf(action.data.card.id) == -1
-									&& (action.data.list == null || isActiveCol(action.data.list))
-									&& (action.data.listAfter == null || isActiveCol(action.data.listAfter))) {
-									cards.push(action.data.card);
-									cardIds.push(action.data.card.id);
-								}
-							});
-							plannedStoryUnits = getStoryUnits(cards);
-							spitItOut(confidence,
-									  projectedDoneDate,
-									  kickoffDate,
-									  releaseReadyDate,
-									  releasedOn,
-									  plannedStoryUnits,
-									  currentStoryUnits,
-									  storyUnitsComplete);
-						});
-				} else {
-					spitItOut(confidence,
-							  projectedDoneDate,
-							  kickoffDate,
-							  releaseReadyDate,
-							  releasedOn,
-							  plannedStoryUnits,
-							  currentStoryUnits,
-							  storyUnitsComplete);
-				}
-			});
 
 function addWeekdays(date, days) {
     date = moment(date); // use a clone
@@ -317,7 +150,7 @@ function addWeekdays(date, days) {
         }
     }
     return date;
-};
+}
 
 function isActiveCol(list) {
     return list != null
@@ -325,9 +158,40 @@ function isActiveCol(list) {
             || list.name.indexOf('Implementation') != -1
             || list.name.indexOf('Verification') != -1
             || list.name.indexOf('Release Ready') != -1);
+}
+
+function getStoryUnits(cards) {
+    var storyUnits = 0;
+    $.each(cards, function(i, card) {
+        var match = card.name.match(/\[([SML])\]/);
+        if (match != null) {
+            switch (match[1]) {
+                case 'S':
+                    storyUnits += 1;
+                    break;
+                case 'M':
+                    storyUnits += 2;
+                    break;
+                case 'L':
+                    storyUnits += 4;
+                    break;
+            }
+        }
+    });
+    return storyUnits;
 };
 
-function getFirstLineData() {
+function getBoardSummaryData() {
+    var confidence = 'TBD';
+    var kickoffDate = 'TBD';
+    var analysisCompleteDate = 'TBD';
+    var releaseReadyDate = 'TBD';
+    var releasedOn = 'TBD';
+    var plannedStoryUnits = 0;
+    var currentStoryUnits = 0;
+    var storyUnitsComplete = 0;
+    var teamVelocity = 1;
+
     var deferred = $.Deferred();
 
     Trello
@@ -379,7 +243,7 @@ function getFirstLineData() {
                         if (match != null && match.length >= 2) {
                             releasedOn = match[1];
                         }
-	});
+                    });
                 }
             });
 
@@ -408,6 +272,7 @@ function getFirstLineData() {
                             confidence: confidence,
                             projectedDoneDate: moment(projectedDoneDate).format("MM/DD/YYYY"),
                             kickoffDate: kickoffDate,
+                            analysisCompleteDate: analysisCompleteDate,
                             releaseReadyDate: releaseReadyDate,
                             releasedOn: releasedOn,
                             plannedStoryUnits: plannedStoryUnits,
@@ -421,6 +286,7 @@ function getFirstLineData() {
                     confidence: confidence,
                     projectedDoneDate: moment(projectedDoneDate).format("MM/DD/YYYY"),
                     kickoffDate: kickoffDate,
+                    analysisCompleteDate: analysisCompleteDate,
                     releaseReadyDate: releaseReadyDate,
                     releasedOn: releasedOn,
                     plannedStoryUnits: plannedStoryUnits,
@@ -432,4 +298,20 @@ function getFirstLineData() {
         });
 
     return deferred.promise();
+}
+
+function buildBoardSummary() {
+    getBoardSummaryData().done(function(data) {
+        $('body').append(
+            '<b>Confidence:</b> ' + data.confidence + ' ' +
+            '<b>Target date:</b> ' + data.projectedDoneDate + ' ' +
+            '<b>Kickoff Date:</b> ' + data.kickoffDate + ' ' +
+            '<b>Analysis Complete Date:</b> ' + data.analysisCompleteDate + ' ' +
+            '<b>Release Ready Date:</b> ' + data.releaseReadyDate + ' ' +
+            '<b>Released On:</b> ' + data.releasedOn + ' ' +
+            '<b>Planned Story Units:</b> ' + data.plannedStoryUnits + ' ' +
+            '<b>Revised Story Units:</b> ' + data.currentStoryUnits + ' ' +
+            '<b>Story Units Complete:</b> ' + data.storyUnitsComplete + ' ' +
+            '<b>Percent Complete (Actual):</b> ' + data.percentComplete);
+    });
 }
