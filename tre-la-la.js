@@ -321,7 +321,7 @@ function getScopeChangeHistory(boardId) {
 	$('<th>Change Summary</th>').addClass('confluenceTh').appendTo($('<tr></tr>')).appendTo($tableScope);
 	$('<th>Scope Change</th>').addClass('confluenceTh').appendTo($('<tr></tr>')).appendTo($tableScope);
 	$('<th>Reason</th>').addClass('confluenceTh').appendTo($('<tr></tr>')).appendTo($tableScope);
-//createCard,updateCard:idList, copyCard, moveCardFromBoard, moveCardToBoard,updateCard:closed
+//createCard,copyCard,updateCard:idList,moveCardFromBoard,moveCardToBoard,updateCard:closed
    Trello.get('boards/' + boardId + '/actions?filter=createCard,copyCard,updateCard:idList,moveCardFromBoard,moveCardToBoard', { limit: 1000 })
    .success(function (cards) {
 		//get card with analyis complete date
@@ -355,34 +355,32 @@ function getScopeChangeHistory(boardId) {
 			$.each(cards, function (ix, card) {
 				if(card.type === "createCard" || card.type === "copyCard" || card.type === "moveCardFromBoard" || card.type === "moveCardToBoard") {
 					if (isActiveCol(card.data.list)) {
-						var daysDiff = moment(moment(card.date)).diff(analysisCompleteDate, 'days');
+						var daysDiff = moment(moment(card.date)).diff(moment(analysisCompleteDate), 'days');
 						if (daysDiff > 0) {
 							var weight = "+";
 							if(card.type === "moveCardFromBoard") { weight = "-"; }
 							//get current state of the card
-							Trello.get('cards/' + card.data.card.id, function(singleCard) {
-								appendRowToTable(singleCard.name, card.date, singleCard.id,  $tableScope, weight, teamVelocity);
-							});
+							appendRowToTable(card.data.card.id, card.date, $tableScope, weight, teamVelocity, card.data.card.name);
 						}
 					}
 				}
 				else {
+					//TODO: Archived items
 					// if(card.type === "updateCard" && card.data.card.closed) {
 						// if (moment(card.date).diff(moment(analysisCompleteDate), 'days') > 0) {
-							// Trello.get('cards/' + card.data.card.id + 'list', function(singleList) {
-									// if (isActiveCol(singleList)) {
-										
-									// }
+							// Trello.get('cards/' + card.data.card.id + '/list', function(singlelist) {
+								// if (isActiveCol(singlelist)) {
+									// appendRowToTable(card.data.card.id, card.date,  $tableScope, "+", teamVelocity, card.data.card.name);
 								// }
-							// }
+							// });
 						// }
-					// }
+					// } else 
 					if(!isActiveCol(card.data.listBefore) && isActiveCol(card.data.listAfter) 
 					&& (moment(card.date).diff(moment(analysisCompleteDate), 'days') > 0)) {
-						appendRowToTable(card.data.card.name, card.date, card.data.card.id, $tableScope, "+", teamVelocity);
+						appendRowToTable(card.data.card.id, card.date,  $tableScope, "+", teamVelocity, card.data.card.name);
 					} else if(isActiveCol(card.data.listBefore) && !isActiveCol(card.data.listAfter) 
 					&& (moment(card.date).diff(moment(analysisCompleteDate), 'days') > 0)) {
-						appendRowToTable(card.data.card.name, card.date, card.data.card.id, $tableScope, "-", teamVelocity);
+						appendRowToTable(card.data.card.id, card.date, $tableScope, "-", teamVelocity, card.data.card.name);
 					}
 				}
 			});
@@ -395,23 +393,30 @@ function getScopeChangeHistory(boardId) {
 	return $scopeChange;
 }
 
-function appendRowToTable(name, date, id, $tableScope, weight, teamVelocity) {
-	var storyUnits = 0;
-	var match = name.match(/\[([SML])\]/);
-	var size = 'U';
-	if (match != null) { size = match[1];}
-	switch (size) {
-		case 'S':
-			storyUnits += 1;
-			break;
-		case 'M':
-			storyUnits += 2;
-			break;
-		case 'L':
-			storyUnits += 4;
-			break;
-	}
+function appendRowToTable(id, date, $tableScope, weight, teamVelocity, name) {
 
+	if(typeof name === 'undefined') {
+		name = "unknown";
+	}
+	else {
+	
+		var storyUnits = 0;
+		var match = name.match(/\[([SML])\]/);
+		var size = 'U';
+		if (match != null) { size = match[1];}
+		switch (size) {
+			case 'S':
+				storyUnits += 1;
+				break;
+			case 'M':
+				storyUnits += 2;
+				break;
+			case 'L':
+				storyUnits += 4;
+				break;
+		}
+	}
+	
 	var row = $('<tr></tr>');
 
 	$('<td>' + moment(date).format('L') + '</td>').addClass('confluenceTd').appendTo(row);
