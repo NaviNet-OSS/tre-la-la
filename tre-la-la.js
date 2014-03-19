@@ -149,29 +149,6 @@ function createCfdChart(id) {
     });
 }
 
-function createBoardSummary(boardId, divId) {
-	getBoardSummaryData(boardId).done(function(data) {
-		completeId = 'tre-la-la-complete-' + boardId
-		$(divId).html(
-			'<table><tr>' +
-			'<td id=\'' + completeId + '\'></td> ' +
-			'<td>' +
-			'<b>Confidence:</b> ' + data.confidence + ' ' +
-			'<b>Target date:</b> ' + moment(data.projectedDoneDate).format("MM/DD/YYYY") + ' ' +
-			'<b>Kickoff Date:</b> ' + data.kickoffDate + ' ' +
-			'<b>Release Ready Date:</b> ' + data.releaseReadyDate + ' ' +
-			'<b>Released On:</b> ' + data.releasedOn + ' ' +
-			'<b>Planned Story Units:</b> ' + data.plannedStoryUnits + ' ' +
-			'<b>Revised Story Units:</b> ' + data.currentStoryUnits + ' ' +
-			'<b>Story Units Complete:</b> ' + data.storyUnitsComplete + ' ' +
-			'<b>Percent Complete (Actual):</b> ' + data.percentCompleteLabel +
-			'</td>' +
-			'</tr></table>'
-			);
-		createPercentageCompleteChart('#' + completeId, data.percentComplete, 100);
-	});
-}
-
 function addWeekdays(date, days) {
     date = moment(date); // use a clone
     while (days > 0) {
@@ -344,19 +321,26 @@ function getBoardSummaryData(boardId) {
 
 $.fn.trelalaBoardSummary = function(boardId) {
     var $this = this;
-    getBoardSummaryData(boardId).done(function(data) {
-        $this.html(
-            '<b>Confidence:</b> ' + data.confidence + ' ' +
-            '<b>Target date:</b> ' + data.projectedDoneDate + ' ' +
-            '<b>Kickoff Date:</b> ' + data.kickoffDate + ' ' +
-            '<b>Analysis Complete Date:</b> ' + data.analysisCompleteDate + ' ' +
-            '<b>Release Ready Date:</b> ' + data.releaseReadyDate + ' ' +
-            '<b>Released On:</b> ' + data.releasedOn + ' ' +
-            '<b>Planned Story Units:</b> ' + data.plannedStoryUnits + ' ' +
-            '<b>Revised Story Units:</b> ' + data.currentStoryUnits + ' ' +
-            '<b>Story Units Complete:</b> ' + data.storyUnitsComplete + ' ' +
-            '<b>Percent Complete (Actual):</b> ' + data.percentComplete);
-    });
+	getBoardSummaryData(boardId).done(function(data) {
+		completeId = 'tre-la-la-complete-' + boardId
+		$this.html(
+			'<table><tr>' +
+			'<td id=\'' + completeId + '\'></td> ' +
+			'<td>' +
+			'<b>Confidence:</b> ' + data.confidence + ' ' +
+			'<b>Target date:</b> ' + moment(data.projectedDoneDate).format("MM/DD/YYYY") + ' ' +
+			'<b>Kickoff Date:</b> ' + data.kickoffDate + ' ' +
+			'<b>Release Ready Date:</b> ' + data.releaseReadyDate + ' ' +
+			'<b>Released On:</b> ' + data.releasedOn + ' ' +
+			'<b>Planned Story Units:</b> ' + data.plannedStoryUnits + ' ' +
+			'<b>Revised Story Units:</b> ' + data.currentStoryUnits + ' ' +
+			'<b>Story Units Complete:</b> ' + data.storyUnitsComplete + ' ' +
+			'<b>Percent Complete (Actual):</b> ' + data.percentCompleteLabel +
+			'</td>' +
+			'</tr></table>'
+			);
+		createPercentageCompleteChart('#' + completeId, data.percentComplete, 100);
+	});
     return this;
 };
 

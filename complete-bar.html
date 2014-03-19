@@ -8,8 +8,13 @@
 	<script src="http://momentjs.com/downloads/moment.min.js"></script>
 	<script src="https://api.trello.com/1/client.js?key=0baa860cc16b4d7004e2fd86c718bee2"></script>
 	<script src="http://code.highcharts.com/highcharts.js"></script>
+    <script type="text/javascript">
+        var AJS = {
+            $: jQuery
+        };
+	</script>
 	<script type="text/javascript" src="tre-la-la.js"></script>
-    <script>
+    <script type="text/javascript">
 /**
  * Set the percentage of the value div
  */
@@ -23,7 +28,7 @@ function setPercentage(id, value) {
 }
 
 		$(document).ready(function() {
-			createBoardSummary('Dw47Ej5u', '#tre-la-la-team-awesome-summary');
+			$('#tre-la-la-team-awesome-summary').trelalaBoardSummary('Dw47Ej5u');
 			createPercentageCompleteChart('#tre-la-la-complete-small', 85, 100);
 			createPercentageCompleteChart('#tre-la-la-complete-smallish', 85, 140);
 			createPercentageCompleteChart('#tre-la-la-complete-normal', 85, 200);
