@@ -456,7 +456,25 @@ $.fn.trelalaBoardSummary = function(boardId) {
     return this;
 };
 
-$.fn.trelalaScopeChangeHistory = function(boardId) {
+$.fn.trelalaBoardDashboardSummary = function(boardId) {
+    var $this = this;
+	getBoardSummaryData(boardId).done(function(data) {
+		completeId = 'tre-la-la-complete-' + boardId
+		$this.html(
+			'<table><tr>' +
+			'<td id=\'' + completeId + '\'></td> ' +
+			'<td>' +
+			'<div>Confidence: <b>' + data.confidence + '</b></div>' +
+			'<div>Target date: <b>' + moment(data.projectedDoneDate).format("MM/DD/YYYY") + '</b></div>' +
+			'</td>' +
+			'</tr></table>'
+			);
+		createPercentageCompleteChart('#' + completeId, data.percentComplete, 100);
+	});
+    return this;
+};
+
+$.fn.trelalaBoardScopeChangeHistory = function(boardId) {
 	this.html(getScopeChangeHistory(boardId));
 	return this;
 };
