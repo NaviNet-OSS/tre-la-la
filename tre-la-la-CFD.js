@@ -1,5 +1,3 @@
-var $ = AJS.$;
-
 function drawCFD(boardId, targetElement) {
     $.when(getMetadata(boardId), getLists(boardId),getCardData(boardId))
         .done(function(metaDataResult, listResult, cardDataResult) {
