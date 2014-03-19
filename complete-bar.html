@@ -5,7 +5,10 @@
     <title>Tre-la-la</title>
 	<link type="text/css" rel="stylesheet" href="tre-la-la.css" media="all">
 	<script src="http://code.jquery.com/jquery-1.11.0.min.js"></script>
-	<script src="http://code.jquery.com/jquery-1.11.0.min.js"></script>
+	<script src="http://momentjs.com/downloads/moment.min.js"></script>
+	<script src="https://api.trello.com/1/client.js?key=0baa860cc16b4d7004e2fd86c718bee2"></script>
+	<script src="http://code.highcharts.com/highcharts.js"></script>
+	<script type="text/javascript" src="tre-la-la.js"></script>
     <script>
 /**
  * Set the percentage of the value div
@@ -20,11 +23,27 @@ function setPercentage(id, value) {
 }
 
 		$(document).ready(function() {
+			createBoardSummary('Dw47Ej5u', '#tre-la-la-team-awesome-summary');
+			createPercentageCompleteChart('#tre-la-la-complete-small', 85, 100);
+			createPercentageCompleteChart('#tre-la-la-complete-smallish', 85, 140);
+			createPercentageCompleteChart('#tre-la-la-complete-normal', 85, 200);
 			setPercentage('#tre-la-la-bar1', 50)
 		});
     </script>
   </head>
   <body>
+	<table>
+		<tr>
+			<td>
+				<div id='tre-la-la-complete-small'></div>
+			</td>
+			<td>
+				<div id='tre-la-la-team-awesome-summary'></div>
+			</td>
+		</tr>
+	</table>
+	<div id='tre-la-la-complete-smallish'></div>
+	<div id='tre-la-la-complete-normal'></div>
 	<div id='tre-la-la-bar1' class='tre-la-la-bar'>
 		<div class='tre-la-la-bar-value'></div>
 	</div>
