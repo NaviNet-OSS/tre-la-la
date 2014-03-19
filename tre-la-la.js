@@ -32,6 +32,9 @@ Trello.authorize({
 var $ = AJS.$;
 
 function createPercentageCompleteChart(id, complete, size) {
+	if (typeof complete === 'string') {
+		complete = parseFloat(complete)
+	}
     remainder = 100.0 - complete
     title = complete.toString() + "%"
     fontSize = size < 180 ? '16px' : '24px'
@@ -72,7 +75,9 @@ function createPercentageCompleteChart(id, complete, size) {
                 }
             }
         },
-
+		legend: {
+			enabled: false
+		},
         series: [{
             data: [
                 {y:remainder, color: colors[0] },
@@ -145,171 +150,25 @@ function createCfdChart(id) {
 }
 
 function createBoardSummary(boardId, divId) {
-	var confidence = 'TBD';
-	var kickoffDate = 'TBD';
-	var analysisCompleteDate = 'TBD';
-	var releaseReadyDate = 'TBD';
-	var releasedOn = 'TBD';
-	var plannedStoryUnits = 0;
-	var currentStoryUnits = 0;
-	var storyUnitsComplete = 0;
-	var teamVelocity = 1;
-
-	var getStoryUnits = function(cards) {
-		var storyUnits = 0;
-		$.each(cards, function(i, card) {
-			var match = card.name.match(/\[([SML])\]/);
-			if (match != null) {
-				switch (match[1]) {
-					case 'S':
-						storyUnits += 1;
-						break;
-					case 'M':
-						storyUnits += 2;
-						break;
-					case 'L':
-						storyUnits += 4;
-						break;
-				}
-			}
-		});
-		return storyUnits;
-	};
-
-	var addWeekdays = function(date, days) {
-		date = moment(date); // use a clone
-		while (days > 0) {
-			date = date.add(1, 'days');
-			// decrease "days" only if it's a weekday.
-			if (date.isoWeekday() !== 6 && date.isoWeekday() !== 7) {
-				days -= 1;
-			}
-		}
-		return date;
-	};
-
-	var isActiveCol = function(list) {
-		return list != null
-			&& (list.name.indexOf('Analysis Complete') != -1
-				|| list.name.indexOf('Implementation') != -1
-				|| list.name.indexOf('Verification') != -1
-				|| list.name.indexOf('Release Ready') != -1);
-	};
-
-	var spitItOut = function(confidence,
-							 projectedDoneDate,
-							 kickoffDate,
-							 releaseReadyDate,
-							 releasedOn,
-							 plannedStoryUnits,
-							 currentStoryUnits,
-							 storyUnitsComplete) {
+	getBoardSummaryData(boardId).done(function(data) {
+		completeId = 'tre-la-la-complete-' + boardId
 		$(divId).html(
-			'<b>Confidence:</b> ' + confidence + ' ' +
-			'<b>Target date:</b> ' + moment(projectedDoneDate).format("MM/DD/YYYY") + ' ' +
-			'<b>Kickoff Date:</b> ' + kickoffDate + ' ' +
-			'<b>Release Ready Date:</b> ' + releaseReadyDate + ' ' +
-			'<b>Released On:</b> ' + releasedOn + ' ' +
-			'<b>Planned Story Units:</b> ' + plannedStoryUnits + ' ' +
-			'<b>Revised Story Units:</b> ' + currentStoryUnits + ' ' +
-			'<b>Story Units Complete:</b> ' + storyUnitsComplete + ' ' +
-			'<b>Percent Complete (Actual):</b> ' + (storyUnitsComplete / currentStoryUnits * 100).toFixed(1) + '%');
-	}
-
-	$(function() {
-		Trello
-			.get('boards/' + boardId + '/lists?cards=open')
-			.success(function(lists) {
-				var analysisCompleteColId = null;
-
-				$.each(lists, function(ix, list) {
-					if (isActiveCol(list)) {
-						currentStoryUnits += getStoryUnits(list.cards);
-					}
-
-					if (list.name.indexOf('Analysis Complete') != -1) {
-						analysisCompleteColId = list.id;
-					}
-
-					if (list.name.indexOf('Release Ready') != -1) {
-						storyUnitsComplete += getStoryUnits(list.cards);
-					}
-
-					if (list.name.indexOf('Meta') != -1) {
-						$.each(list.cards, function(ix, card) {
-							var match = card.name.match(/^Confidence:\ (.*)$/);
-							if (match != null && match.length >= 2) {
-								confidence = match[1];
-							}
-
-							match = card.name.match(/^Kickoff\ Date:\ (.*)$/);
-							if (match != null && match.length >= 2) {
-								kickoffDate = match[1];
-							}
-
-							match = card.name.match(/^Analysis\ Complete\ Date:\ (.*)$/);
-							if (match != null && match.length >= 2) {
-								analysisCompleteDate = match[1];
-							}
-
-							match = card.name.match(/^Team\ Velocity\ \(Points\/Day\):\ (.*)$/);
-							if (match != null && match.length >= 2) {
-								teamVelocity = match[1];
-							}
-
-							match = card.name.match(/^Release\ Ready\ Date:\ (.*)$/);
-							if (match != null && match.length >= 2) {
-								releaseReadyDate = match[1];
-							}
-
-							match = card.name.match(/^Releases\ On:\ (.*)$/);
-							if (match != null && match.length >= 2) {
-								releasedOn = match[1];
-							}
-						});
-					}
-				});
-
-				var storyUnitsLeft = currentStoryUnits - storyUnitsComplete;
-				var projectedDoneDate = addWeekdays(new Date(), storyUnitsLeft / teamVelocity);
-
-				if (analysisCompleteDate !== 'TBD') {
-					var before = moment(analysisCompleteDate).add('days', 1).toISOString();
-					Trello
-						.get('boards/' + boardId + '/actions', { before: before, limit: 1000 })
-						.success(function(actions) {
-							var cards = [];
-							var cardIds = [];
-							$.each(actions, function(i, action) {
-								if (action.data.card != null
-									&& cardIds.indexOf(action.data.card.id) == -1
-									&& (action.data.list == null || isActiveCol(action.data.list))
-									&& (action.data.listAfter == null || isActiveCol(action.data.listAfter))) {
-									cards.push(action.data.card);
-									cardIds.push(action.data.card.id);
-								}
-							});
-							plannedStoryUnits = getStoryUnits(cards);
-							spitItOut(confidence,
-									  projectedDoneDate,
-									  kickoffDate,
-									  releaseReadyDate,
-									  releasedOn,
-									  plannedStoryUnits,
-									  currentStoryUnits,
-									  storyUnitsComplete);
-						});
-				} else {
-					spitItOut(confidence,
-							  projectedDoneDate,
-							  kickoffDate,
-							  releaseReadyDate,
-							  releasedOn,
-							  plannedStoryUnits,
-							  currentStoryUnits,
-							  storyUnitsComplete);
-				}
-			});
+			'<table><tr>' +
+			'<td id=\'' + completeId + '\'></td> ' +
+			'<td>' +
+			'<b>Confidence:</b> ' + data.confidence + ' ' +
+			'<b>Target date:</b> ' + moment(data.projectedDoneDate).format("MM/DD/YYYY") + ' ' +
+			'<b>Kickoff Date:</b> ' + data.kickoffDate + ' ' +
+			'<b>Release Ready Date:</b> ' + data.releaseReadyDate + ' ' +
+			'<b>Released On:</b> ' + data.releasedOn + ' ' +
+			'<b>Planned Story Units:</b> ' + data.plannedStoryUnits + ' ' +
+			'<b>Revised Story Units:</b> ' + data.currentStoryUnits + ' ' +
+			'<b>Story Units Complete:</b> ' + data.storyUnitsComplete + ' ' +
+			'<b>Percent Complete (Actual):</b> ' + data.percentCompleteLabel +
+			'</td>' +
+			'</tr></table>'
+			);
+		createPercentageCompleteChart('#' + completeId, data.percentComplete, 100);
 	});
 }
 
@@ -441,6 +300,7 @@ function getBoardSummaryData(boardId) {
                         });
                         plannedStoryUnits = getStoryUnits(cards);
 
+						percentComplete = (storyUnitsComplete / currentStoryUnits * 100).toFixed(1)
                         deferred.resolve({
                             confidence: confidence,
                             projectedDoneDate: moment(projectedDoneDate).format("MM/DD/YYYY"),
@@ -451,10 +311,12 @@ function getBoardSummaryData(boardId) {
                             plannedStoryUnits: plannedStoryUnits,
                             currentStoryUnits: currentStoryUnits,
                             storyUnitsComplete: storyUnitsComplete,
-                            percentComplete: (storyUnitsComplete / currentStoryUnits * 100).toFixed(1) + '%'
+							percentComplete: percentComplete,
+							percentCompleteLabel: percentComplete + '%'
                         });
                     });
             } else {
+				percentComplete = (storyUnitsComplete / currentStoryUnits * 100).toFixed(1)
                 deferred.resolve({
                     confidence: confidence,
                     projectedDoneDate: moment(projectedDoneDate).format("MM/DD/YYYY"),
@@ -465,7 +327,8 @@ function getBoardSummaryData(boardId) {
                     plannedStoryUnits: plannedStoryUnits,
                     currentStoryUnits: currentStoryUnits,
                     storyUnitsComplete: storyUnitsComplete,
-                    percentComplete: (storyUnitsComplete / currentStoryUnits * 100).toFixed(1) + '%'
+                    percentComplete: percentComplete,
+					percentCompleteLabel: percentComplete + '%'
                 });
             }
         });
