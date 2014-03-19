@@ -1,5 +1,31 @@
 // This is Tre-la-la for Trello.
 // Leverage Confluence AJS.$ to access JQuery
+var onAuthorize = function() {
+    updateLoggedIn();
+    //$("#output").empty();
+    
+    Trello.members.get("me", function(member){
+        $("#fullName").text(member.fullName);
+    });
+
+};
+
+var updateLoggedIn = function() {
+    var isLoggedIn = Trello.authorized();
+    //$("#loggedout").toggle(!isLoggedIn);
+    //$("#loggedin").toggle(isLoggedIn);        
+};
+    
+var logout = function() {
+    Trello.deauthorize();
+    updateLoggedIn();
+};
+                          
+Trello.authorize({
+    interactive:false,
+    success: onAuthorize
+});
+
 function createPercentageCompleteChart(id, complete) {
 	remainder = 100.0 - complete
 	title = complete.toString() + "%"
@@ -113,4 +139,9 @@ function createCfdChart(id) {
 AJS.$(document).ready(function() {
 	createPercentageCompleteChart('#tre-la-la-percent-complete', 85);
 	createCfdChart('#tre-la-la-cfd');
+	Trello.authorize({
+		type: "popup",
+		success: onAuthorize,
+		scope: { write: true, read: true }
+	});
 });
