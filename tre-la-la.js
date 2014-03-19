@@ -313,6 +313,118 @@ function getBoardSummaryData(boardId) {
     return deferred.promise();
 }
 
+function getScopeChangeHistory(boardId) {
+	var $scopeChange = $("<div />");
+	var $tableScope = $("<table></table>").addClass('confluenceTable');
+
+	$('<th>Change Date</th>').addClass('confluenceTh').appendTo($('<tr></tr>')).appendTo($tableScope);
+	$('<th>Change Summary</th>').addClass('confluenceTh').appendTo($('<tr></tr>')).appendTo($tableScope);
+	$('<th>Scope Change</th>').addClass('confluenceTh').appendTo($('<tr></tr>')).appendTo($tableScope);
+	$('<th>Reason</th>').addClass('confluenceTh').appendTo($('<tr></tr>')).appendTo($tableScope);
+//createCard,updateCard:idList, copyCard, moveCardFromBoard, moveCardToBoard,updateCard:closed
+   Trello.get('boards/' + boardId + '/actions?filter=createCard,copyCard,updateCard:idList,moveCardFromBoard,moveCardToBoard', { limit: 1000 })
+   .success(function (cards) {
+		//get card with analyis complete date
+		var analysisCompleteDate = null;
+		$.each(cards, function (ix, card) {
+			if(card.type === "createCard") {
+				var cardName = card.data.card.name;
+
+				var matches = cardName.match("Analysis Complete Date ?: ?(.*)");
+				if (matches != null && matches[1] != "TBD") {
+					analysisCompleteDate = new Date(matches[1]);
+					return false;
+				}
+			}
+		});
+		
+		var teamVelocity = 1;
+		$.each(cards, function (ix, card) {
+			if(card.type === "createCard") {
+				var cardName = card.data.card.name;
+
+				var matches = cardName.match("/^Team\ Velocity\ \(Points\/Day\):\ (.*)$/");
+				if (matches != null) {
+					teamVelocity = matches[1];
+					return false;
+				}
+			}
+		});
+		
+		if (analysisCompleteDate !== null) {
+			$.each(cards, function (ix, card) {
+				if(card.type === "createCard" || card.type === "copyCard" || card.type === "moveCardFromBoard" || card.type === "moveCardToBoard") {
+					if (isActiveCol(card.data.list)) {
+						var daysDiff = moment(moment(card.date)).diff(analysisCompleteDate, 'days');
+						if (daysDiff > 0) {
+							var weight = "+";
+							if(card.type === "moveCardFromBoard") { weight = "-"; }
+							//get current state of the card
+							Trello.get('cards/' + card.data.card.id, function(singleCard) {
+								appendRowToTable(singleCard.name, card.date, singleCard.id,  $tableScope, weight, teamVelocity);
+							});
+						}
+					}
+				}
+				else {
+					// if(card.type === "updateCard" && card.data.card.closed) {
+						// if (moment(card.date).diff(moment(analysisCompleteDate), 'days') > 0) {
+							// Trello.get('cards/' + card.data.card.id + 'list', function(singleList) {
+									// if (isActiveCol(singleList)) {
+										
+									// }
+								// }
+							// }
+						// }
+					// }
+					if(!isActiveCol(card.data.listBefore) && isActiveCol(card.data.listAfter) 
+					&& (moment(card.date).diff(moment(analysisCompleteDate), 'days') > 0)) {
+						appendRowToTable(card.data.card.name, card.date, card.data.card.id, $tableScope, "+", teamVelocity);
+					} else if(isActiveCol(card.data.listBefore) && !isActiveCol(card.data.listAfter) 
+					&& (moment(card.date).diff(moment(analysisCompleteDate), 'days') > 0)) {
+						appendRowToTable(card.data.card.name, card.date, card.data.card.id, $tableScope, "-", teamVelocity);
+					}
+				}
+			});
+		}
+	});
+
+	
+	$tableScope.appendTo($scopeChange);
+	
+	return $scopeChange;
+}
+
+function appendRowToTable(name, date, id, $tableScope, weight, teamVelocity) {
+	var storyUnits = 0;
+	var match = name.match(/\[([SML])\]/);
+	var size = 'U';
+	if (match != null) { size = match[1];}
+	switch (size) {
+		case 'S':
+			storyUnits += 1;
+			break;
+		case 'M':
+			storyUnits += 2;
+			break;
+		case 'L':
+			storyUnits += 4;
+			break;
+	}
+
+	var row = $('<tr></tr>');
+
+	$('<td>' + moment(date).format('L') + '</td>').addClass('confluenceTd').appendTo(row);
+	$('<td>' + name + '</td>').addClass('confluenceTd').appendTo(row);
+	//calculate card points before date
+	$('<td>' + weight + ' ' + storyUnits / teamVelocity + ' day(s)</td>').addClass('confluenceTd').appendTo(row);
+	//get reason from description
+	Trello.get('cards/' + id + '/desc', function (desc) {
+		$('<td>' + desc._value + '</td>').addClass('confluenceTd').appendTo(row);
+	});
+	row.appendTo($tableScope);
+}
+
 
 
 //********************************************
@@ -342,6 +454,11 @@ $.fn.trelalaBoardSummary = function(boardId) {
 		createPercentageCompleteChart('#' + completeId, data.percentComplete, 100);
 	});
     return this;
+};
+
+$.fn.trelalaScopeChangeHistory = function(boardId) {
+	this.html(getScopeChangeHistory(boardId));
+	return this;
 };
 
 
