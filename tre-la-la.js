@@ -434,22 +434,37 @@ function appendRowToTable(name, date, id, $tableScope, weight, teamVelocity) {
 $.fn.trelalaBoardSummary = function(boardId) {
     var $this = this;
 	getBoardSummaryData(boardId).done(function(data) {
-		completeId = 'tre-la-la-complete-' + boardId
+		completeId = $this.attr('id') + '-complete-' + boardId
 		$this.html(
-			'<table><tr>' +
-			'<td id=\'' + completeId + '\'></td> ' +
-			'<td>' +
-			'<b>Confidence:</b> ' + data.confidence + ' ' +
-			'<b>Target date:</b> ' + moment(data.projectedDoneDate).format("MM/DD/YYYY") + ' ' +
-			'<b>Kickoff Date:</b> ' + data.kickoffDate + ' ' +
-			'<b>Release Ready Date:</b> ' + data.releaseReadyDate + ' ' +
-			'<b>Released On:</b> ' + data.releasedOn + ' ' +
-			'<b>Planned Story Units:</b> ' + data.plannedStoryUnits + ' ' +
-			'<b>Revised Story Units:</b> ' + data.currentStoryUnits + ' ' +
-			'<b>Story Units Complete:</b> ' + data.storyUnitsComplete + ' ' +
-			'<b>Percent Complete (Actual):</b> ' + data.percentCompleteLabel +
-			'</td>' +
-			'</tr></table>'
+			'<table border=\'0\'>' +
+			'<tr>' +
+				'<td id=\'' + completeId + '\' rowspan=\'4\'></td> ' +
+				'<td>Confidence: <b>' + data.confidence + '</b></td>' +
+				'<td width=\'5px\'></td>' +
+				'<td>Target date: <b>' + moment(data.projectedDoneDate).format("MM/DD/YYYY") + '</b></td> ' +
+				'<td width=\'5px\'></td>' +
+				'<td>Planned Story Units: <b>' + data.plannedStoryUnits + '</b></td> ' +
+			'</tr>' +
+			'<tr>' +
+				'<td>Percent Complete (Actual): <b>' + data.percentCompleteLabel + '</b></td>' +
+				'<td width=\'5px\'></td>' +
+				'<td>Kickoff Date: <b>' + data.kickoffDate + '</b></td> ' +
+				'<td width=\'5px\'></td>' +
+				'<td>Revised Story Units: <b>' + data.currentStoryUnits + '</b></td> ' +
+			'</tr>' +
+			'<tr>' +
+				'<td>&nbsp;</td>' +
+				'<td width=\'5px\'></td>' +
+				'<td>Release Ready Date: <b>' + data.releaseReadyDate + '</b></td> ' +
+				'<td width=\'5px\'></td>' +
+				'<td>Story Units Complete: <b>' + data.storyUnitsComplete + '</b></td> ' +
+			'</tr>' +
+			'<tr>' +
+				'<td>&nbsp;</td>' +
+				'<td width=\'5px\'></td>' +
+				'<td>Released On: <b>' + data.releasedOn + '</b></td> ' +
+			'</tr>' +
+			'</table>'
 			);
 		createPercentageCompleteChart('#' + completeId, data.percentComplete, 100);
 	});
@@ -459,7 +474,7 @@ $.fn.trelalaBoardSummary = function(boardId) {
 $.fn.trelalaBoardDashboardSummary = function(boardId) {
     var $this = this;
 	getBoardSummaryData(boardId).done(function(data) {
-		completeId = 'tre-la-la-complete-' + boardId
+		completeId = $this.attr('id') + '-complete-' + boardId
 		$this.html(
 			'<table><tr>' +
 			'<td id=\'' + completeId + '\'></td> ' +
