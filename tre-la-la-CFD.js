@@ -1,3 +1,5 @@
+var $ = AJS.$;
+
 function drawCFD(boardId, targetElement) {
     $.when(getMetadata(boardId), getLists(boardId),getCardData(boardId))
         .done(function(metaDataResult, listResult, cardDataResult) {
@@ -85,9 +87,16 @@ function onInitComplete(state) {
         var date = dates[i];
         for(var j = 0; j < cards.length; j++) {
             var card = cards[j];
+            if(card.ignored) 
+                continue;
             var lastAction = getLastActionOfDay(card, date);
             
             if(!lastAction || !lastAction.newColumn) continue;
+            
+            if(lastAction.cardClosed) {
+                card.ignored = true;
+                continue;
+            }
             
             if(!x[lastAction.newColumn]) {
                 x[lastAction.newColumn] = $.map(new Array(dates.length), function() { return 0; });
@@ -131,11 +140,11 @@ function getLastActionOfDay(card, date) {
     if(!ret) return null;
     
     if(ret.type === 'updateCard' && ret.data.listAfter && isActiveCol(ret.data.listAfter)) {
-        return { name: card.name, id: card.id, date: moment(ret.date), newColumn: ret.data.listAfter.id };
+        return { name: card.name, id: card.id, date: moment(ret.date), newColumn: ret.data.listAfter.id, cardClosed: (ret.data.card ? ret.data.card.closed : false) };
     } else if(ret.type === 'updateCard' && ret.data.card.closed) {
-        return { name: card.name, id: card.id, date: moment(ret.date), newColumn: null };
+        return { name: card.name, id: card.id, date: moment(ret.date), newColumn: null, cardClosed: true };
     } else if (ret.type === 'createCard' && isActiveCol(ret.data.list)) {
-        return { name: card.name, id: card.id, date: moment(ret.date), newColumn: ret.data.list.id };
+        return { name: card.name, id: card.id, date: moment(ret.date), newColumn: ret.data.list.id, cardClosed: (ret.data.card ? ret.data.card.closed : false) };
     }
 }
 
