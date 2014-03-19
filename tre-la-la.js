@@ -1,5 +1,7 @@
 // This is Tre-la-la for Trello.
 // Leverage Confluence AJS.$ to access JQuery
+
+/*
 var onAuthorize = function() {
     updateLoggedIn();
     //$("#output").empty();
@@ -25,6 +27,7 @@ Trello.authorize({
     interactive:false,
     success: onAuthorize
 });
+*/
 
 function createPercentageCompleteChart(id, complete) {
 	remainder = 100.0 - complete
