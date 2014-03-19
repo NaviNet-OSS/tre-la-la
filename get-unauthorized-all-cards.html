@@ -5,96 +5,261 @@
         <script src="http://code.jquery.com/jquery-1.7.1.min.js"></script>
         <script src="https://api.trello.com/1/client.js?key=f5613f90a2a2b7b56334453aeff8f858"></script>        
         <script src="http://trello-cfd.azurewebsites.net/bundles/highcharts?v=5k1FR7lWLeCY4R3SEEXFlV_mvXFFun6m07oIcBlI_4w1"></script>
+        <script src="http://momentjs.com/downloads/moment.min.js"></script>
     </head>
     <body>
         <input type="text" id="token-field">
         <div id="win"></div>
         <script>
-            var board = '53284c2e0f453a7927d9bcd3';
-            var params = {
-                actions: 'all'
-            };
-            Trello.get('boards/' + board + '/lists')
+            $(document).ready(function() {
+                //var board = '53284c2e0f453a7927d9bcd3';
+                var board = 'Dw47Ej5u';
+                
+                getMetadata(board).done(function(meta) { 
+                    onInitComplete({boardId: board, meta: meta})
+                });
+            
+                
+            });     
+                    
+                    
+                    
+                    
+                  
+                  
+                  
+                  
+                  
+                  
+            // Functions
+            function onInitComplete(data) {
+                var meta = data.meta;
+                var categories, series, cards, cardActions, dates, listNames, listMap
+                Trello.get('boards/' + data.boardId + '/lists')
                   .success(function(queryResult) {
                     listNames = $.map(queryResult, function(list, idx) {
+                        if(list.name === "Meta") return null;
                         return list.name;
                     });
+                    listMap = {};
+                    $.each(queryResult, function(idx, list) {
+                    console.log(list.name + " " + list.id);
+                    console.log(list);
+                        if(list.name === "Meta") return null;
+                        
+                        listMap[list.id] = list.name;
+                    });
                   });
-                  
-            Trello.get('boards/'+ board + '/cards/all', params)
-                  .success(function(queryResult) { 
-                    cards = queryResult; 
-                    
-                    cardActions = $.map(queryResult, function(card, idx) {
-                        return $.map(card.actions, function(cardAction, idxAction) {
-                            if(cardAction.data.listBefore) {
-                                return { name: card.name, id: card.id, date: cardAction.date, newColumn: cardAction.data.listAfter.name };
-                            } else {
-                                return null;
+                
+                var params = {
+                    actions: 'updateCard,createCard'
+                };           
+                Trello.get('boards/'+ data.boardId + '/cards/all', params)
+                      .success(function(queryResult) { 
+                                    cards = queryResult; 
+
+                                    cardActions = $.map(queryResult, function(card, idx) {
+                                        return $.map(card.actions, function(cardAction, idxAction) {
+                                            if(cardAction.type === 'updateCard' && cardAction.data.listBefore) {
+                                                return { name: card.name, id: card.id, date: moment(cardAction.date), newColumn: cardAction.data.listAfter.id };
+                                            } else if (cardAction.type === 'createCard') {
+                                                return { name: card.name, id: card.id, date: moment(cardAction.date), newColumn: cardAction.data.list.id };
+                                            } else {
+                                                return null;
+                                            }
+                                        });
+                                    });
+                                    window.cards = cards;
+
+                                    // data points
+                                    //categories = $.map(cardActions, function(cardAction, idx) { return cardAction.date; });
+                                    dates = buildDateSeries(meta.kickoffDate);
+                                    categories = $.map(dates, 
+                                                    function(date, idx) { 
+                                                        return date.format('MM/DD/YYYY'); 
+                                                    });
+
+                                    var x = {};
+                                    for(var i = 0; i < dates.length; i++) {
+                                        var date = dates[i];
+                                        for(var j = 0; j < cards.length; j++) {
+                                            var card = cards[j];
+                                            var lastAction = getLastActionOfDay(card, date);
+                                            
+                                            if(!lastAction || !lastAction.newColumn) continue;
+                                            
+                                            if(!x[lastAction.newColumn]) {
+                                                x[lastAction.newColumn] = $.map(new Array(dates.length), function() { return 0; });
+                                            }
+                                            var columnActions = x[lastAction.newColumn];
+                                            columnActions[i] = columnActions[i] + 1;
+                                        }
+                                    }
+                                    window.x = x;
+                                    series = $.map(x, function(points, id) { 
+                                        return { name: listMap[id], data: points }; 
+                                        });
+                                    series2 = $.map(listNames, 
+                                                function(listName, idx) {
+                                                    var x = $.map(dates, 
+                                                                function(categoryName, idx2) {
+                                                                    return $.grep(cardActions, 
+                                                                        function(cardAction) { 
+                                                                            return cardAction.newColumn === listName && cardAction.date < categoryName && (idx2 == 0 ||cardAction.date > dates[idx2 - 1]); 
+                                                                        }).length;
+                                                                });
+                                                    return {name: listName, data: x};
+                                                });    
+
+                                    doMagicChartOfDestiny(categories, series);
+                                });
+                                
+                                
+                
+            }
+
+            function isMatchingCardAction(cardAction) {
+                return (cardAction.type === 'updateCard' && cardAction.data.listBefore)
+                    || (cardAction.type === 'createCard')
+                    || (cardAction.type === 'updateCard') && (cardAction.data.card && cardAction.data.card.closed) ;
+            }
+            
+            function getLastActionOfDay(card, date) {
+                var ret = null;
+                var nextDay = date.clone().add(1, 'days');
+                
+                for(var i = card.actions.length - 1; i >= 0; i--) {
+                    var cardAction = card.actions[i];
+                    if(isMatchingCardAction(cardAction) && moment(cardAction.date) < nextDay) {
+                        ret = cardAction;
+                    } else {
+                        continue;
+                    }
+                }
+                
+                if(!ret) return null;
+                
+                if(ret.type === 'updateCard' && ret.data.listAfter && ret.data.listAfter.name !== 'Meta') {
+                    return { name: card.name, id: card.id, date: moment(ret.date), newColumn: ret.data.listAfter.id };
+                } else if(ret.type === 'updateCard' && ret.data.card.closed) {
+                    return { name: card.name, id: card.id, date: moment(ret.date), newColumn: null };
+                } else if (ret.type === 'createCard' && ret.data.list.name !== 'Meta') {
+                    return { name: card.name, id: card.id, date: moment(ret.date), newColumn: ret.data.list.id };
+                }
+            }
+            
+            function doMagicChartOfDestiny(categories, series) {
+                var chart;
+                chart = new Highcharts.Chart({
+                    chart: {
+                        renderTo: 'win',
+                        type: 'area'
+                    },
+                    title: {
+                        text: 'Tre-la-la'
+                    },
+                    xAxis: {
+                        categories: categories,
+                        tickmarkPlacement: 'on',
+                        title: {
+                            enabled: false
+                        }
+                    },
+                    yAxis: {
+                        title: {
+                            text: 'Cards'
+                        }
+                    },
+                    tooltip: {
+                        formatter: function() {
+                            return ''+
+                                this.x +': '+ this.y;
+                        }
+                    },
+                    plotOptions: {
+                        area: {
+                            stacking: 'normal',
+                            lineColor: '#666666',
+                            lineWidth: 1,
+                            marker: {
+                                lineWidth: 1,
+                                lineColor: '#666666'
+                            }
+                        }
+                    },
+                    series: series
+                });
+            }
+            function buildDateSeries(startDate) {
+                var series = [];
+                var currentDate = startDate;
+                var today = moment();
+                while(currentDate < today) {
+                    series.push(currentDate);
+                    currentDate = currentDate.clone().add(1, 'day');
+                }
+                
+                return series;
+            }
+            
+            function getMetadata(boardId) {
+                var deferred = $.Deferred();
+                var kickoffDate, analysisCompleteDate, teamVelocity, releaseReadyDate, releasedOn;
+                // Ugly Edgar code
+                Trello
+                    .get('boards/' + boardId + '/lists?cards=open')
+                    .success(function(lists) {
+                        var analysisCompleteColId = null;
+
+                        $.each(lists, function(ix, list) {
+                            if (list.name.indexOf('Analysis Complete') != -1) {
+                                analysisCompleteColId = list.id;
+                            }
+
+                            if (list.name.indexOf('Meta') != -1) {
+                                $.each(list.cards, function(ix, card) {
+                                    var match = card.name.match(/^Confidence:\ (.*)$/);
+                                    if (match != null && match.length >= 2) {
+                                        confidence = match[1];
+                                    }
+
+                                    match = card.name.match(/^Kickoff\ Date:\ (.*)$/);
+                                    if (match != null && match.length >= 2) {
+                                        kickoffDate = match[1];
+                                    }
+
+                                    match = card.name.match(/^Analysis\ Complete\ Date:\ (.*)$/);
+                                    if (match != null && match.length >= 2) {
+                                        analysisCompleteDate = match[1];
+                                    }
+
+                                    match = card.name.match(/^Team\ Velocity\ \(Points\/Day\):\ (.*)$/);
+                                    if (match != null && match.length >= 2) {
+                                        teamVelocity = match[1];
+                                    }
+
+                                    match = card.name.match(/^Release\ Ready\ Date:\ (.*)$/);
+                                    if (match != null && match.length >= 2) {
+                                        releaseReadyDate = match[1];
+                                    }
+
+                                    match = card.name.match(/^Releases\ On:\ (.*)$/);
+                                    if (match != null && match.length >= 2) {
+                                        releasedOn = match[1];
+                                    }
+                                });
                             }
                         });
+                        deferred.resolve({ 
+                            kickoffDate: moment(kickoffDate), 
+                            analysisCompleteDate: moment(analysisCompleteDate), 
+                            teamVelocity: teamVelocity, 
+                            releaseReadyDate: moment(releaseReadyDate), 
+                            releasedOn: releasedOn
+                        });
                     });
-            
-            // data points
-            categories = $.map(cardActions, function(cardAction, idx) { return cardAction.date; });
-            
-            series = $.map(listNames, function(listName, idx) {
-                var x = $.map(categories, function(categoryName, idx2) {
-                   return $.grep(cardActions, function(cardAction) { 
-                        return cardAction.newColumn === listName && cardAction.date == categoryName; }).length;
-                });
-                return {name: listName, data: x};
-            });
-                    ////////////
-                    
-                    var chart;
-        $(document).ready(function() {
-            chart = new Highcharts.Chart({
-                chart: {
-                    renderTo: 'win',
-                    type: 'area'
-                },
-                title: {
-                    text: 'Tre-la-la'
-                },
-                xAxis: {
-                    categories: categories,
-                    tickmarkPlacement: 'on',
-                    title: {
-                        enabled: false
-                    }
-                },
-                yAxis: {
-                    title: {
-                        text: 'Cards'
-                    }
-                },
-                tooltip: {
-                    formatter: function() {
-                        return ''+
-                            this.x +': '+ this.y;
-                    }
-                },
-                plotOptions: {
-                    area: {
-                        stacking: 'normal',
-                        lineColor: '#666666',
-                        lineWidth: 1,
-                        marker: {
-                            lineWidth: 1,
-                            lineColor: '#666666'
-                        }
-                    }
-                },
-                series: series
-            });
-        });
-                    ///////////
-                    
-                    
-                    
-                    
-                  });
+                return deferred.promise();
+            }
 
         </script>
     </body>
