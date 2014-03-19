@@ -32,6 +32,7 @@ Trello.authorize({
 function createPercentageCompleteChart(id, complete, size) {
 	remainder = 100.0 - complete
 	title = complete.toString() + "%"
+	fontSize = size < 180 ? '16px' : '24px'
 	
     var colors = [ '#BBBBBB', '#00CC66', '#F7464A'];
     $(id).highcharts({
@@ -48,7 +49,7 @@ function createPercentageCompleteChart(id, complete, size) {
             text: title,
             align: 'center',
             verticalAlign: 'middle',
-			style: { fontSize: '24px' }
+			style: { fontSize: fontSize }
         },
         tooltip: false,
         plotOptions: {
