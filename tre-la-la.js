@@ -29,7 +29,7 @@ Trello.authorize({
 });
 */
 
-var $ = AJS.$;
+//var $ = AJS.$;
 
 function createPercentageCompleteChart(id, complete, size) {
 	if (typeof complete === 'string') {
