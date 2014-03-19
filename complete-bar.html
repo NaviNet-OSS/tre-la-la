@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Tre-la-la</title>
+	<link type="text/css" rel="stylesheet" href="tre-la-la.css" media="all">
+	<script src="http://code.jquery.com/jquery-1.11.0.min.js"></script>
+	<script src="http://code.jquery.com/jquery-1.11.0.min.js"></script>
+    <script>
+/**
+ * Set the percentage of the value div
+ */
+function setPercentage(id, value) {
+    var newWidth = parseInt($(id).width() * value / 100.0);
+    console.debug("total : " + $(id).width());
+    console.debug("new : " + newWidth);
+    $(id).find(".tre-la-la-bar-value").animate({
+        width: newWidth + "px"
+    }, 500);
+}
+
+		$(document).ready(function() {
+			setPercentage('#tre-la-la-bar1', 50)
+		});
+    </script>
+  </head>
+  <body>
+	<div id='tre-la-la-bar1' class='tre-la-la-bar'>
+		<div class='tre-la-la-bar-value'></div>
+	</div>
+  </body>
+</html>
