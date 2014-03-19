@@ -29,16 +29,16 @@ Trello.authorize({
 });
 */
 
-function createPercentageCompleteChart(id, complete) {
+function createPercentageCompleteChart(id, complete, size) {
 	remainder = 100.0 - complete
 	title = complete.toString() + "%"
 	
-    var colors = ['#F7464A', '#00CC66'];
+    var colors = [ '#BBBBBB', '#00CC66', '#F7464A'];
     $(id).highcharts({
         chart: {
             type: 'pie',
-            height: 250,
-            width: 250,
+            height: size,
+            width: size,
             borderRadius: 0
         },
         credits: {
@@ -53,9 +53,9 @@ function createPercentageCompleteChart(id, complete) {
         tooltip: false,
         plotOptions: {
             pie: {
-                borderWidth: 6,
+                borderWidth: 3,
                 startAngle: 90,
-                innerSize: '55%',
+                innerSize: '70%',
                 size: '100%',
                 shadow: false,
                 dataLabels: false,
@@ -140,7 +140,7 @@ function createCfdChart(id) {
 }
 
 AJS.$(document).ready(function() {
-	createPercentageCompleteChart('#tre-la-la-percent-complete', 85);
+	createPercentageCompleteChart('#tre-la-la-percent-complete', 85, 200);
 	createCfdChart('#tre-la-la-cfd');
 	/* HACK
 	Trello.authorize({
