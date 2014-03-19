@@ -37,6 +37,7 @@
         var releasedOn = 'TBD';
         var plannedStoryUnits = 16;
         var boardId = 'Dw47Ej5u';
+        var teamVelocity = 1;
 
         var getStoryUnits = function (cards) {
             var storyUnits = 0;
@@ -85,8 +86,7 @@
         $(function () {
             var currentStoryUnits = 0;
             var storyUnitsComplete = 0;
-            var teamVelocity = 1;
-
+            
             Trello.get('boards/' + boardId + '/lists?cards=open', function (lists) {
                 $.each(lists, function (ix, list) {
                     if (list.name.indexOf('Analysis Complete') != -1
@@ -136,17 +136,7 @@
                         if (isPrimaryColumn(columnName)) {
                             var daysDiff = moment(moment(card.date)).diff(analysisCompleteDate, 'days');
                             if (daysDiff > 0) {
-                                var row = $('<tr></tr>');
-
-                                $('<td>' + moment(card.date).format('L') + '</td>').appendTo(row);
-                                $('<td>' + card.data.card.name + '</td>').appendTo(row);
-                                //calculate card points before date
-                                $('<td>+ ' + getStoryUnits($.makeArray(card.data.card)) / teamVelocity + ' day(s)</td>').appendTo(row);
-                                //get reason from description
-                                Trello.get('cards/' + card.data.card.id + '/desc', function (desc) {
-                                    $('<td>' + desc._value + '</td>').appendTo(row);
-                                });
-                                row.appendTo($tableScope);
+                                appendRowToTable(card, $tableScope, "+");
                             }
                         }
                         else if ( columnName.toLowerCase().indexOf('out of scope') != -1) {
@@ -154,17 +144,7 @@
                                 if(actions.length > 0) {
                                     //get the last state before index
                                     if(isPrimaryColumn(actions[0].data.listBefore.name)) {
-                                        var row = $('<tr></tr>');
-
-                                        $('<td>' + moment(card.date).format('L') + '</td>').appendTo(row);
-                                        $('<td>' + card.data.card.name + '</td>').appendTo(row);
-                                        //calculate card points before date
-                                        $('<td>- ' + getStoryUnits($.makeArray(actions[0].data.card)) / teamVelocity + ' day(s)</td>').appendTo(row);
-                                        //get reason from description
-                                        Trello.get('cards/' + actions[0].data.card.id + '/desc', function (desc) {
-                                            $('<td>' + desc._value + '</td>').appendTo(row);
-                                        });
-                                        row.appendTo($tableScope);
+                                        appendRowToTable(card, $tableScope, "-");
                                     }
                                 }
                             });
@@ -177,7 +157,21 @@
             });
         });
 
-        function getAnalysisCompleteDate(cards) {
+        var appendRowToTable = function(card, $tableScope, weight) {
+            var row = $('<tr></tr>');
+
+            $('<td>' + moment(card.date).format('L') + '</td>').appendTo(row);
+            $('<td>' + card.data.card.name + '</td>').appendTo(row);
+            //calculate card points before date
+            $('<td>' + weight + ' ' + getStoryUnits($.makeArray(card.data.card)) / teamVelocity + ' day(s)</td>').appendTo(row);
+            //get reason from description
+            Trello.get('cards/' + card.data.card.id + '/desc', function (desc) {
+                $('<td>' + desc._value + '</td>').appendTo(row);
+            });
+            row.appendTo($tableScope);
+        };
+
+        var getAnalysisCompleteDate = function(cards) {
             var analysisCompleteDate = null;
             $.each(cards, function (ix, card) {
                 var cardName = card.data.card.name;
