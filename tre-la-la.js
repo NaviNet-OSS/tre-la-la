@@ -421,7 +421,7 @@ function appendRowToTable(id, date, $tableScope, weight, teamVelocity, name) {
     $('<td>' + moment(date).format('L') + '</td>').addClass('confluenceTd').appendTo(row);
     $('<td>' + name + '</td>').addClass('confluenceTd').appendTo(row);
     //calculate card points before date
-    $('<td>' + weight + ' ' + storyUnits / teamVelocity + ' day(s)</td>').addClass('confluenceTd').appendTo(row);
+    $('<td>' + weight + storyUnits / teamVelocity + ' day(s)</td>').addClass('confluenceTd').appendTo(row);
     //get reason from description
     Trello.get('cards/' + id + '/desc', function (desc) {
         $('<td>' + desc._value + '</td>').addClass('confluenceTd').appendTo(row);
