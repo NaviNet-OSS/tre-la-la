@@ -35,7 +35,7 @@ function getCardData(boardId) {
     var deferred = $.Deferred();
 
     var params = {
-        actions: 'updateCard,createCard'
+        actions: 'createCard,copyCard,updateCard:idList,moveCardFromBoard,moveCardToBoard,updateCard:closed'
     };
     Trello
         .get('boards/'+ boardId + '/cards/all', params)
@@ -47,7 +47,7 @@ function getCardData(boardId) {
                 return $.map(card.actions, function(cardAction, idxAction) {
                     if(cardAction.type === 'updateCard' && cardAction.data.listBefore) {
                         return { name: card.name, id: card.id, date: moment(cardAction.date), newColumn: cardAction.data.listAfter.id };
-                    } else if (cardAction.type === 'createCard') {
+                    } else if (card.type === "createCard" || card.type === "copyCard" || card.type === "moveCardFromBoard" || card.type === "moveCardToBoard") {
                         return { name: card.name, id: card.id, date: moment(cardAction.date), newColumn: cardAction.data.list.id };
                     } else {
                         return null;
@@ -109,6 +109,20 @@ function onInitComplete(state) {
 
     doMagicChartOfDestiny(categories, series, state.targetElement);
 }
+
+function getCardStoryUnits(card) {
+    var match = card.name.match(/\[([SML])\]/);
+    if (match != null) {
+        switch (match[1]) {
+            case 'S':
+                return 1;
+            case 'M':
+                return 2;
+            case 'L':
+                return 4;
+        }
+    }
+};
 
 function sortSeries(series) {
     var sorted = [];

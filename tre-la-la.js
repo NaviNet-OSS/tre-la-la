@@ -32,13 +32,13 @@ Trello.authorize({
 //var $ = AJS.$;
 
 function createPercentageCompleteChart(id, complete, size) {
-	if (typeof complete === 'string') {
-		complete = parseFloat(complete)
-	}
+    if (typeof complete === 'string') {
+        complete = parseFloat(complete)
+    }
     remainder = 100.0 - complete
     title = complete.toString() + "%"
     fontSize = size < 180 ? '16px' : '24px'
-	innerSize = size <= 100 ? '75%' : '70%'
+    innerSize = size <= 100 ? '75%' : '70%'
 
     var colors = [ '#BBBBBB', '#00CC66', '#F7464A'];
     $(id).highcharts({
@@ -47,7 +47,7 @@ function createPercentageCompleteChart(id, complete, size) {
             height: size,
             width: size,
             borderRadius: 0,
-			spacing: 0
+            spacing: 0
         },
         credits: {
             enabled: false
@@ -75,9 +75,9 @@ function createPercentageCompleteChart(id, complete, size) {
                 }
             }
         },
-		legend: {
-			enabled: false
-		},
+        legend: {
+            enabled: false
+        },
         series: [{
             data: [
                 {y:remainder, color: colors[0] },
@@ -277,7 +277,7 @@ function getBoardSummaryData(boardId) {
                         });
                         plannedStoryUnits = getStoryUnits(cards);
 
-						percentComplete = (storyUnitsComplete / currentStoryUnits * 100).toFixed(1)
+                        percentComplete = (storyUnitsComplete / currentStoryUnits * 100).toFixed(1)
                         deferred.resolve({
                             confidence: confidence,
                             projectedDoneDate: moment(projectedDoneDate).format("MM/DD/YYYY"),
@@ -288,12 +288,12 @@ function getBoardSummaryData(boardId) {
                             plannedStoryUnits: plannedStoryUnits,
                             currentStoryUnits: currentStoryUnits,
                             storyUnitsComplete: storyUnitsComplete,
-							percentComplete: percentComplete,
-							percentCompleteLabel: percentComplete + '%'
+                            percentComplete: percentComplete,
+                            percentCompleteLabel: percentComplete + '%'
                         });
                     });
             } else {
-				percentComplete = (storyUnitsComplete / currentStoryUnits * 100).toFixed(1)
+                percentComplete = (storyUnitsComplete / currentStoryUnits * 100).toFixed(1)
                 deferred.resolve({
                     confidence: confidence,
                     projectedDoneDate: moment(projectedDoneDate).format("MM/DD/YYYY"),
@@ -305,7 +305,7 @@ function getBoardSummaryData(boardId) {
                     currentStoryUnits: currentStoryUnits,
                     storyUnitsComplete: storyUnitsComplete,
                     percentComplete: percentComplete,
-					percentCompleteLabel: percentComplete + '%'
+                    percentCompleteLabel: percentComplete + '%'
                 });
             }
         });
@@ -314,120 +314,119 @@ function getBoardSummaryData(boardId) {
 }
 
 function getScopeChangeHistory(boardId) {
-	var $scopeChange = $("<div />");
-	var $tableScope = $("<table></table>").addClass('confluenceTable');
+    var $scopeChange = $("<div />");
+    var $tableScope = $("<table></table>").addClass('confluenceTable');
 
-	$('<th>Change Date</th>').addClass('confluenceTh').appendTo($('<tr></tr>')).appendTo($tableScope);
-	$('<th>Change Summary</th>').addClass('confluenceTh').appendTo($('<tr></tr>')).appendTo($tableScope);
-	$('<th>Scope Change</th>').addClass('confluenceTh').appendTo($('<tr></tr>')).appendTo($tableScope);
-	$('<th>Reason</th>').addClass('confluenceTh').appendTo($('<tr></tr>')).appendTo($tableScope);
+    $('<th>Change Date</th>').addClass('confluenceTh').appendTo($('<tr></tr>')).appendTo($tableScope);
+    $('<th>Change Summary</th>').addClass('confluenceTh').appendTo($('<tr></tr>')).appendTo($tableScope);
+    $('<th>Scope Change</th>').addClass('confluenceTh').appendTo($('<tr></tr>')).appendTo($tableScope);
+    $('<th>Reason</th>').addClass('confluenceTh').appendTo($('<tr></tr>')).appendTo($tableScope);
 //createCard,copyCard,updateCard:idList,moveCardFromBoard,moveCardToBoard,updateCard:closed
-   Trello.get('boards/' + boardId + '/actions?filter=createCard,copyCard,updateCard:idList,moveCardFromBoard,moveCardToBoard', { limit: 1000 })
+   Trello.get('boards/' + boardId + '/actions?filter=createCard,copyCard,updateCard:idList,moveCardFromBoard,moveCardToBoard,updateCard:closed', { limit: 1000 })
    .success(function (cards) {
-		//get card with analyis complete date
-		var analysisCompleteDate = null;
-		$.each(cards, function (ix, card) {
-			if(card.type === "createCard") {
-				var cardName = card.data.card.name;
+        //get card with analyis complete date
+        var analysisCompleteDate = null;
+        $.each(cards, function (ix, card) {
+            if(card.type === "createCard") {
+                var cardName = card.data.card.name;
 
-				var matches = cardName.match("Analysis Complete Date ?: ?(.*)");
-				if (matches != null && matches[1] != "TBD") {
-					analysisCompleteDate = new Date(matches[1]);
-					return false;
-				}
-			}
-		});
-		
-		var teamVelocity = 1;
-		$.each(cards, function (ix, card) {
-			if(card.type === "createCard") {
-				var cardName = card.data.card.name;
+                var matches = cardName.match("Analysis Complete Date ?: ?(.*)");
+                if (matches != null && matches[1] != "TBD") {
+                    analysisCompleteDate = new Date(matches[1]);
+                    return false;
+                }
+            }
+        });
 
-				var matches = cardName.match("/^Team\ Velocity\ \(Points\/Day\):\ (.*)$/");
-				if (matches != null) {
-					teamVelocity = matches[1];
-					return false;
-				}
-			}
-		});
-		
-		if (analysisCompleteDate !== null) {
-			$.each(cards, function (ix, card) {
-				if(card.type === "createCard" || card.type === "copyCard" || card.type === "moveCardFromBoard" || card.type === "moveCardToBoard") {
-					if (isActiveCol(card.data.list)) {
-						var daysDiff = moment(moment(card.date)).diff(moment(analysisCompleteDate), 'days');
-						if (daysDiff > 0) {
-							var weight = "+";
-							if(card.type === "moveCardFromBoard") { weight = "-"; }
-							//get current state of the card
-							appendRowToTable(card.data.card.id, card.date, $tableScope, weight, teamVelocity, card.data.card.name);
-						}
-					}
-				}
-				else {
-					//TODO: Archived items
-					// if(card.type === "updateCard" && card.data.card.closed) {
-						// if (moment(card.date).diff(moment(analysisCompleteDate), 'days') > 0) {
-							// Trello.get('cards/' + card.data.card.id + '/list', function(singlelist) {
-								// if (isActiveCol(singlelist)) {
-									// appendRowToTable(card.data.card.id, card.date,  $tableScope, "+", teamVelocity, card.data.card.name);
-								// }
-							// });
-						// }
-					// } else 
-					if(!isActiveCol(card.data.listBefore) && isActiveCol(card.data.listAfter) 
-					&& (moment(card.date).diff(moment(analysisCompleteDate), 'days') > 0)) {
-						appendRowToTable(card.data.card.id, card.date,  $tableScope, "+", teamVelocity, card.data.card.name);
-					} else if(isActiveCol(card.data.listBefore) && !isActiveCol(card.data.listAfter) 
-					&& (moment(card.date).diff(moment(analysisCompleteDate), 'days') > 0)) {
-						appendRowToTable(card.data.card.id, card.date, $tableScope, "-", teamVelocity, card.data.card.name);
-					}
-				}
-			});
-		}
-	});
+        var teamVelocity = 1;
+        $.each(cards, function (ix, card) {
+            if(card.type === "createCard") {
+                var cardName = card.data.card.name;
 
-	
-	$tableScope.appendTo($scopeChange);
-	
-	return $scopeChange;
+                var matches = cardName.match("/^Team\ Velocity\ \(Points\/Day\):\ (.*)$/");
+                if (matches != null) {
+                    teamVelocity = matches[1];
+                    return false;
+                }
+            }
+        });
+
+        if (analysisCompleteDate !== null) {
+            $.each(cards, function (ix, card) {
+                if(card.type === "createCard" || card.type === "copyCard" || card.type === "moveCardFromBoard" || card.type === "moveCardToBoard") {
+                    if (isActiveCol(card.data.list)) {
+                        var daysDiff = moment(moment(card.date)).diff(moment(analysisCompleteDate), 'days');
+                        if (daysDiff > 0) {
+                            var weight = "+";
+                            if(card.type === "moveCardFromBoard") { weight = "-"; }
+                            //get current state of the card
+                            appendRowToTable(card.data.card.id, card.date, $tableScope, weight, teamVelocity, card.data.card.name);
+                        }
+                    }
+                }
+                else {
+                    //TODO: Archived items
+                    if(card.type === "updateCard" && card.data.card.closed) {
+                        if (moment(card.date).diff(moment(analysisCompleteDate), 'days') > 0) {
+                            Trello.get('cards/' + card.data.card.id + '/list', function(singlelist) {
+                                if (isActiveCol(singlelist)) {
+                                    appendRowToTable(card.data.card.id, card.date,  $tableScope, "-", teamVelocity, card.data.card.name);
+                                }
+                            });
+                        }
+                    } else if(!isActiveCol(card.data.listBefore) && isActiveCol(card.data.listAfter)
+                    && (moment(card.date).diff(moment(analysisCompleteDate), 'days') > 0)) {
+                        appendRowToTable(card.data.card.id, card.date,  $tableScope, "+", teamVelocity, card.data.card.name);
+                    } else if(isActiveCol(card.data.listBefore) && !isActiveCol(card.data.listAfter)
+                    && (moment(card.date).diff(moment(analysisCompleteDate), 'days') > 0)) {
+                        appendRowToTable(card.data.card.id, card.date, $tableScope, "-", teamVelocity, card.data.card.name);
+                    }
+                }
+            });
+        }
+    });
+
+
+    $tableScope.appendTo($scopeChange);
+
+    return $scopeChange;
 }
 
 function appendRowToTable(id, date, $tableScope, weight, teamVelocity, name) {
 
-	if(typeof name === 'undefined') {
-		name = "unknown";
-	}
-	else {
-	
-		var storyUnits = 0;
-		var match = name.match(/\[([SML])\]/);
-		var size = 'U';
-		if (match != null) { size = match[1];}
-		switch (size) {
-			case 'S':
-				storyUnits += 1;
-				break;
-			case 'M':
-				storyUnits += 2;
-				break;
-			case 'L':
-				storyUnits += 4;
-				break;
-		}
-	}
-	
-	var row = $('<tr></tr>');
+    if(typeof name === 'undefined') {
+        name = "unknown";
+    }
+    else {
 
-	$('<td>' + moment(date).format('L') + '</td>').addClass('confluenceTd').appendTo(row);
-	$('<td>' + name + '</td>').addClass('confluenceTd').appendTo(row);
-	//calculate card points before date
-	$('<td>' + weight + ' ' + storyUnits / teamVelocity + ' day(s)</td>').addClass('confluenceTd').appendTo(row);
-	//get reason from description
-	Trello.get('cards/' + id + '/desc', function (desc) {
-		$('<td>' + desc._value + '</td>').addClass('confluenceTd').appendTo(row);
-	});
-	row.appendTo($tableScope);
+        var storyUnits = 0;
+        var match = name.match(/\[([SML])\]/);
+        var size = 'U';
+        if (match != null) { size = match[1];}
+        switch (size) {
+            case 'S':
+                storyUnits += 1;
+                break;
+            case 'M':
+                storyUnits += 2;
+                break;
+            case 'L':
+                storyUnits += 4;
+                break;
+        }
+    }
+
+    var row = $('<tr></tr>');
+
+    $('<td>' + moment(date).format('L') + '</td>').addClass('confluenceTd').appendTo(row);
+    $('<td>' + name + '</td>').addClass('confluenceTd').appendTo(row);
+    //calculate card points before date
+    $('<td>' + weight + ' ' + storyUnits / teamVelocity + ' day(s)</td>').addClass('confluenceTd').appendTo(row);
+    //get reason from description
+    Trello.get('cards/' + id + '/desc', function (desc) {
+        $('<td>' + desc._value + '</td>').addClass('confluenceTd').appendTo(row);
+    });
+    row.appendTo($tableScope);
 }
 
 
@@ -438,65 +437,65 @@ function appendRowToTable(id, date, $tableScope, weight, teamVelocity, name) {
 
 $.fn.trelalaBoardSummary = function(boardId) {
     var $this = this;
-	getBoardSummaryData(boardId).done(function(data) {
-		completeId = $this.attr('id') + '-complete-' + boardId
-		$this.html(
-			'<table border=\'0\'>' +
-			'<tr>' +
-				'<td id=\'' + completeId + '\' rowspan=\'4\'></td> ' +
-				'<td>Confidence: <b>' + data.confidence + '</b></td>' +
-				'<td width=\'5px\'></td>' +
-				'<td>Target date: <b>' + moment(data.projectedDoneDate).format("MM/DD/YYYY") + '</b></td> ' +
-				'<td width=\'5px\'></td>' +
-				'<td>Planned Story Units: <b>' + data.plannedStoryUnits + '</b></td> ' +
-			'</tr>' +
-			'<tr>' +
-				'<td>Percent Complete (Actual): <b>' + data.percentCompleteLabel + '</b></td>' +
-				'<td width=\'5px\'></td>' +
-				'<td>Kickoff Date: <b>' + data.kickoffDate + '</b></td> ' +
-				'<td width=\'5px\'></td>' +
-				'<td>Revised Story Units: <b>' + data.currentStoryUnits + '</b></td> ' +
-			'</tr>' +
-			'<tr>' +
-				'<td>&nbsp;</td>' +
-				'<td width=\'5px\'></td>' +
-				'<td>Release Ready Date: <b>' + data.releaseReadyDate + '</b></td> ' +
-				'<td width=\'5px\'></td>' +
-				'<td>Story Units Complete: <b>' + data.storyUnitsComplete + '</b></td> ' +
-			'</tr>' +
-			'<tr>' +
-				'<td>&nbsp;</td>' +
-				'<td width=\'5px\'></td>' +
-				'<td>Released On: <b>' + data.releasedOn + '</b></td> ' +
-			'</tr>' +
-			'</table>'
-			);
-		createPercentageCompleteChart('#' + completeId, data.percentComplete, 100);
-	});
+    getBoardSummaryData(boardId).done(function(data) {
+        completeId = $this.attr('id') + '-complete-' + boardId
+        $this.html(
+            '<table border=\'0\'>' +
+            '<tr>' +
+                '<td id=\'' + completeId + '\' rowspan=\'4\'></td> ' +
+                '<td>Confidence: <b>' + data.confidence + '</b></td>' +
+                '<td width=\'5px\'></td>' +
+                '<td>Target date: <b>' + moment(data.projectedDoneDate).format("MM/DD/YYYY") + '</b></td> ' +
+                '<td width=\'5px\'></td>' +
+                '<td>Planned Story Units: <b>' + data.plannedStoryUnits + '</b></td> ' +
+            '</tr>' +
+            '<tr>' +
+                '<td>Percent Complete (Actual): <b>' + data.percentCompleteLabel + '</b></td>' +
+                '<td width=\'5px\'></td>' +
+                '<td>Kickoff Date: <b>' + data.kickoffDate + '</b></td> ' +
+                '<td width=\'5px\'></td>' +
+                '<td>Revised Story Units: <b>' + data.currentStoryUnits + '</b></td> ' +
+            '</tr>' +
+            '<tr>' +
+                '<td>&nbsp;</td>' +
+                '<td width=\'5px\'></td>' +
+                '<td>Release Ready Date: <b>' + data.releaseReadyDate + '</b></td> ' +
+                '<td width=\'5px\'></td>' +
+                '<td>Story Units Complete: <b>' + data.storyUnitsComplete + '</b></td> ' +
+            '</tr>' +
+            '<tr>' +
+                '<td>&nbsp;</td>' +
+                '<td width=\'5px\'></td>' +
+                '<td>Released On: <b>' + data.releasedOn + '</b></td> ' +
+            '</tr>' +
+            '</table>'
+            );
+        createPercentageCompleteChart('#' + completeId, data.percentComplete, 100);
+    });
     return this;
 };
 
 $.fn.trelalaBoardDashboardSummary = function(boardId) {
     var $this = this;
-	getBoardSummaryData(boardId).done(function(data) {
-		completeId = $this.attr('id') + '-complete-' + boardId
-		$this.html(
-			'<table><tr>' +
-			'<td id=\'' + completeId + '\'></td> ' +
-			'<td>' +
-			'<div>Confidence: <b>' + data.confidence + '</b></div>' +
-			'<div>Target date: <b>' + moment(data.projectedDoneDate).format("MM/DD/YYYY") + '</b></div>' +
-			'</td>' +
-			'</tr></table>'
-			);
-		createPercentageCompleteChart('#' + completeId, data.percentComplete, 100);
-	});
+    getBoardSummaryData(boardId).done(function(data) {
+        completeId = $this.attr('id') + '-complete-' + boardId
+        $this.html(
+            '<table><tr>' +
+            '<td id=\'' + completeId + '\'></td> ' +
+            '<td>' +
+            '<div>Confidence: <b>' + data.confidence + '</b></div>' +
+            '<div>Target date: <b>' + moment(data.projectedDoneDate).format("MM/DD/YYYY") + '</b></div>' +
+            '</td>' +
+            '</tr></table>'
+            );
+        createPercentageCompleteChart('#' + completeId, data.percentComplete, 100);
+    });
     return this;
 };
 
 $.fn.trelalaBoardScopeChangeHistory = function(boardId) {
-	this.html(getScopeChangeHistory(boardId));
-	return this;
+    this.html(getScopeChangeHistory(boardId));
+    return this;
 };
 
 
