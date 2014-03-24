@@ -86,7 +86,7 @@ function onInitComplete(state) {
                 continue;
             var lastAction = getLastActionOfDay(card, date);
 
-            if(!lastAction || !lastAction.newColumn) continue;
+            if(!lastAction || !lastAction.newColumn || !listMap[lastAction.newColumn]) continue;
 
             if(lastAction.cardClosed) {
                 card.ignored = true;
