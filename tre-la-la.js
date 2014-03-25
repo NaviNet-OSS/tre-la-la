@@ -394,13 +394,22 @@ function getScopeChangeHistory(boardId) {
 
 function appendRowToTable(id, date, $tableScope, weight, teamVelocity, name) {
 
-    if(typeof name === 'undefined') {
-        name = "unknown";
-    }
-    else {
+    var row = $('<tr></tr>');
 
-        var storyUnits = 0;
-        var match = name.match(/\[([SML])\]/);
+    $('<td>' + moment(date).format('L') + '</td>').addClass('confluenceTd').appendTo(row);
+	var $columnName = $('<td></td>');
+	var $columnScopeChange = $('<td></td>');
+	
+	
+    $columnName.addClass('confluenceTd').appendTo(row);
+    //calculate card points before date
+	$columnScopeChange.addClass('confluenceTd').appendTo(row);
+	
+	Trello.get('cards/' + id + '/name', function (currentName) {
+        $columnName.text(currentName._value);
+		
+		var storyUnits = 0;
+        var match = currentName._value.match(/\[([SML])\]/);
         var size = 'U';
         if (match != null) { size = match[1];}
         switch (size) {
@@ -414,14 +423,11 @@ function appendRowToTable(id, date, $tableScope, weight, teamVelocity, name) {
                 storyUnits += 4;
                 break;
         }
-    }
-
-    var row = $('<tr></tr>');
-
-    $('<td>' + moment(date).format('L') + '</td>').addClass('confluenceTd').appendTo(row);
-    $('<td>' + name + '</td>').addClass('confluenceTd').appendTo(row);
-    //calculate card points before date
-    $('<td>' + weight + storyUnits / teamVelocity + ' day(s)</td>').addClass('confluenceTd').appendTo(row);
+		
+		$columnScopeChange.text(weight + storyUnits / teamVelocity + ' day(s)');
+		
+    });
+	
     //get reason from description
     Trello.get('cards/' + id + '/desc', function (desc) {
         $('<td>' + desc._value + '</td>').addClass('confluenceTd').appendTo(row);
