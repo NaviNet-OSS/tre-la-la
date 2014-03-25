@@ -408,10 +408,10 @@ function appendRowToTable(id, date, $tableScope, weight, teamVelocity, name) {
 //************************************
 
 function drawCFD(boardId, targetElement) {
-    $.when(getMetadata(boardId), getLists(boardId),getCardData(boardId))
-        .done(function(metaDataResult, listResult, cardDataResult) {
-            onInitComplete($.extend(metaDataResult, listResult, cardDataResult, { targetElement: targetElement }));
-        });
+    $.when(getMetadata(boardId), getLists(boardId), getCardData(boardId))
+     .done(function(metaDataResult, listResult, cardDataResult) {
+        onInitComplete($.extend(metaDataResult, listResult, cardDataResult, { targetElement: targetElement }));
+     });
 }
 
 function getLists(boardId) {
@@ -767,5 +767,10 @@ $.fn.trelalaBoardDashboardSummary = function(boardId) {
 
 $.fn.trelalaBoardScopeChangeHistory = function(boardId) {
     this.html(getScopeChangeHistory(boardId));
+    return this;
+};
+
+$.fn.trelalaBoardCfd = function(boardId) {
+    drawCFD(boardId, this.attr('id'));
     return this;
 };
