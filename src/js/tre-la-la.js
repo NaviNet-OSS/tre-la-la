@@ -143,7 +143,7 @@ function getBoardSummaryData(boardId) {
                             analysisCompleteDate = match[1];
                         }
 
-                        match = card.name.match(/^Team\ Velocity\ \(Points\/Day\):\ (.*)$/);
+                        match = card.name.match(/^Team\ Velocity\ \(Points\/Day\) ?:\ (.*)$/);
                         if (match != null && match.length >= 2) {
                             teamVelocity = match[1];
                         }
@@ -226,71 +226,49 @@ function getScopeChangeHistory(boardId) {
     $('<th>Change Summary</th>').addClass('confluenceTh').appendTo($('<tr></tr>')).appendTo($tableScope);
     $('<th>Scope Change</th>').addClass('confluenceTh').appendTo($('<tr></tr>')).appendTo($tableScope);
     $('<th>Reason</th>').addClass('confluenceTh').appendTo($('<tr></tr>')).appendTo($tableScope);
-//createCard,copyCard,updateCard:idList,moveCardFromBoard,moveCardToBoard,updateCard:closed
-   Trello.get('boards/' + boardId + '/actions?filter=createCard,copyCard,updateCard:idList,moveCardFromBoard,moveCardToBoard,updateCard:closed', { limit: 1000 })
-   .success(function (cards) {
-        //get card with analyis complete date
-        var analysisCompleteDate = null;
-        $.each(cards, function (ix, card) {
-            if(card.type === "createCard") {
-                var cardName = card.data.card.name;
 
-                var matches = cardName.match("Analysis Complete Date ?: ?(.*)");
-                if (matches != null && matches[1] != "TBD") {
-                    analysisCompleteDate = new Date(matches[1]);
-                    return false;
-                }
-            }
-        });
-
-        var teamVelocity = 1;
-        $.each(cards, function (ix, card) {
-            if(card.type === "createCard") {
-                var cardName = card.data.card.name;
-
-                var matches = cardName.match("/^Team\ Velocity\ \(Points\/Day\):\ (.*)$/");
-                if (matches != null) {
-                    teamVelocity = matches[1];
-                    return false;
-                }
-            }
-        });
-
-        if (analysisCompleteDate !== null) {
-            $.each(cards, function (ix, card) {
-                if(card.type === "createCard" || card.type === "copyCard" || card.type === "moveCardFromBoard" || card.type === "moveCardToBoard") {
-                    if (isActiveCol(card.data.list)) {
-                        var daysDiff = moment(moment(card.date)).diff(moment(analysisCompleteDate), 'days');
-                        if (daysDiff > 0) {
-                            var weight = "+";
-                            if(card.type === "moveCardFromBoard") { weight = "-"; }
-                            //get current state of the card
-                            appendRowToTable(card.data.card.id, card.date, $tableScope, weight, teamVelocity, card.data.card.name);
-                        }
-                    }
-                }
-                else {
-                    //TODO: Archived items
-                    if(card.type === "updateCard" && card.data.card.closed) {
-                        if (moment(card.date).diff(moment(analysisCompleteDate), 'days') > 0) {
-                            Trello.get('cards/' + card.data.card.id + '/list', function(singlelist) {
-                                if (isActiveCol(singlelist)) {
-                                    appendRowToTable(card.data.card.id, card.date,  $tableScope, "-", teamVelocity, card.data.card.name);
-                                }
-                            });
-                        }
-                    } else if(!isActiveCol(card.data.listBefore) && isActiveCol(card.data.listAfter)
-                    && (moment(card.date).diff(moment(analysisCompleteDate), 'days') > 0)) {
-                        appendRowToTable(card.data.card.id, card.date,  $tableScope, "+", teamVelocity, card.data.card.name);
-                    } else if(isActiveCol(card.data.listBefore) && !isActiveCol(card.data.listAfter)
-                    && (moment(card.date).diff(moment(analysisCompleteDate), 'days') > 0)) {
-                        appendRowToTable(card.data.card.id, card.date, $tableScope, "-", teamVelocity, card.data.card.name);
-                    }
-                }
-            });
-        }
-    });
-
+	getMetadata(boardId).done(function(data) {
+	   Trello.get('boards/' + boardId + '/actions?filter=createCard,copyCard,updateCard:idList,moveCardFromBoard,moveCardToBoard,updateCard:closed', { limit: 1000 })
+	   .success(function (cards) {
+			//get card with analyis complete date
+			var analysisCompleteDate = data.meta.analysisCompleteDate;
+			var teamVelocity = data.meta.teamVelocity;
+			
+			if (analysisCompleteDate !== null) {
+				$.each(cards, function (ix, card) {
+					if(card.type === "createCard" || card.type === "copyCard" || card.type === "moveCardFromBoard" || card.type === "moveCardToBoard") {
+						if (isActiveCol(card.data.list)) {
+							var daysDiff = moment(moment(card.date)).diff(moment(analysisCompleteDate), 'days');
+							if (daysDiff > 0) {
+								var weight = "+";
+								if(card.type === "moveCardFromBoard") { weight = "-"; }
+								//get current state of the card
+								appendRowToTable(card.data.card.id, card.date, $tableScope, weight, teamVelocity, card.data.card.name);
+							}
+						}
+					}
+					else {
+						//TODO: Archived items
+						if(card.type === "updateCard" && card.data.card.closed) {
+							if (moment(card.date).diff(moment(analysisCompleteDate), 'days') > 0) {
+								Trello.get('cards/' + card.data.card.id + '/list', function(singlelist) {
+									if (isActiveCol(singlelist)) {
+										appendRowToTable(card.data.card.id, card.date,  $tableScope, "-", teamVelocity, card.data.card.name);
+									}
+								});
+							}
+						} else if(!isActiveCol(card.data.listBefore) && isActiveCol(card.data.listAfter)
+						&& (moment(card.date).diff(moment(analysisCompleteDate), 'days') > 0)) {
+							appendRowToTable(card.data.card.id, card.date,  $tableScope, "+", teamVelocity, card.data.card.name);
+						} else if(isActiveCol(card.data.listBefore) && !isActiveCol(card.data.listAfter)
+						&& (moment(card.date).diff(moment(analysisCompleteDate), 'days') > 0)) {
+							appendRowToTable(card.data.card.id, card.date, $tableScope, "-", teamVelocity, card.data.card.name);
+						}
+					}
+				});
+			}
+		});
+	});
 
     $tableScope.appendTo($scopeChange);
 
@@ -329,7 +307,7 @@ function appendRowToTable(id, date, $tableScope, weight, teamVelocity, name) {
                 break;
         }
 
-		$columnScopeChange.text(weight + storyUnits / teamVelocity + ' day(s)');
+		$columnScopeChange.text(weight + Math.round((storyUnits / teamVelocity) * 100) / 100 + ' day(s)');
 
     });
 
@@ -612,8 +590,8 @@ function getMetadata(boardId) {
                         if (match != null && match.length >= 2) {
                             analysisCompleteDate = match[1];
                         }
-
-                        match = card.name.match(/^Team\ Velocity\ \(Points\/Day\):\ (.*)$/);
+						
+						match = card.name.match(/^Team\ Velocity\ \(Points\/Day\) ?:\ (.*)$/);
                         if (match != null && match.length >= 2) {
                             teamVelocity = match[1];
                         }
