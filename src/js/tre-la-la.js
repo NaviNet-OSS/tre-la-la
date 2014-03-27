@@ -54,68 +54,6 @@ function createPercentageCompleteChart(id, complete, size) {
     });
 }
 
-function createCfdChart(id) {
-    $(id).highcharts({
-        chart: {
-            type: 'area'
-        },
-        title: {
-            text: 'Historic and Estimated Worldwide Population Growth by Region'
-        },
-        subtitle: {
-            text: 'Source: Wikipedia.org'
-        },
-        xAxis: {
-            categories: ['1750', '1800', '1850', '1900', '1950', '1999', '2050'],
-            tickmarkPlacement: 'on',
-            title: {
-                enabled: false
-            }
-        },
-        yAxis: {
-            title: {
-                text: 'Billions'
-            },
-            labels: {
-                formatter: function() {
-                    return this.value / 1000;
-                }
-            }
-        },
-        tooltip: {
-            shared: true,
-            valueSuffix: ' millions'
-        },
-        plotOptions: {
-            area: {
-                stacking: 'normal',
-                lineColor: '#666666',
-                lineWidth: 1,
-                marker: {
-                    lineWidth: 1,
-                    lineColor: '#666666'
-                }
-            }
-        },
-        series: [{
-            name: 'Asia',
-            data: [502, 635, 809, 947, 1402, 3634, 5268]
-        }, {
-            name: 'Africa',
-            data: [106, 107, 111, 133, 221, 767, 1766]
-        }, {
-            name: 'Europe',
-            data: [163, 203, 276, 408, 547, 729, 628]
-        }, {
-            name: 'America',
-            data: [18, 31, 54, 156, 339, 818, 1201]
-        }, {
-            name: 'Oceania',
-            data: [2, 2, 2, 6, 13, 30, 46]
-        }]
-    });
-}
-
 function addWeekdays(date, days) {
     date = moment(date); // use a clone
     while (days > 0) {
@@ -486,7 +424,14 @@ function onInitComplete(state) {
                         return date.format('MM/DD/YYYY');
                     });
 
-    var x = {};
+    var columnPointsMap = {};
+    
+    // populate all the series with zeroes
+    $.each(listMap, function(id, name) {
+        columnPointsMap[id] = $.map(new Array(dates.length), function() { return 0; });
+    });
+    
+    // fill in each series, day by day, card by card
     for(var i = 0; i < dates.length; i++) {
         var date = dates[i];
         for(var j = 0; j < cards.length; j++) {
@@ -502,16 +447,13 @@ function onInitComplete(state) {
                 continue;
             }
 
-            if(!x[lastAction.newColumn]) {
-                x[lastAction.newColumn] = $.map(new Array(dates.length), function() { return 0; });
-            }
-            var columnActions = x[lastAction.newColumn];
+            var columnActions = columnPointsMap[lastAction.newColumn];
             columnActions[i] = columnActions[i] + 1;
         }
     }
 
     series = sortSeries(
-        $.map(x, function(points, id) {
+        $.map(columnPointsMap, function(points, id) {
             return { name: listMap[id], data: points };
         })
     );
@@ -566,8 +508,6 @@ function getLastActionOfDay(card, date) {
         var cardAction = card.actions[i];
         if(isMatchingCardAction(cardAction) && moment(cardAction.date) < nextDay) {
             ret = cardAction;
-        } else {
-            continue;
         }
     }
 
