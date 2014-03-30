@@ -69,6 +69,7 @@ function addWeekdays(date, days) {
 function isActiveCol(list) {
     return list != null
         && (list.name.indexOf('Analysis Complete') != -1
+			|| list.name.indexOf('Design') != -1
             || list.name.indexOf('Implementation') != -1
             || list.name.indexOf('Verification') != -1
             || list.name.indexOf('Release Ready') != -1);
@@ -77,22 +78,33 @@ function isActiveCol(list) {
 function getStoryUnits(cards) {
     var storyUnits = 0;
     $.each(cards, function(i, card) {
-        var match = card.name.match(/\[([SML])\]/);
+		if (!card.name) return true;
+		storyUnits += getStoryUnit(card.name);
+    });
+    return storyUnits;
+}
+
+function getStoryUnit(cardName)
+{
+		var storyUnits = 0;
+        var match = cardName.match(/\[([SML])\]/i);
         if (match != null) {
             switch (match[1]) {
                 case 'S':
-                    storyUnits += 1;
+				case 's':
+                    storyUnits = 1;
                     break;
                 case 'M':
-                    storyUnits += 2;
+				case 'm':
+                    storyUnits = 2;
                     break;
                 case 'L':
-                    storyUnits += 4;
+				case 'l':
+                    storyUnits = 4;
                     break;
             }
         }
-    });
-    return storyUnits;
+		return storyUnits;
 }
 
 function getBoardSummaryData(boardId) {
@@ -291,22 +303,9 @@ function appendRowToTable(id, date, $tableScope, weight, teamVelocity, name) {
 	Trello.get('cards/' + id + '/name', function (currentName) {
         $columnName.text(currentName._value);
 
-		var storyUnits = 0;
-        var match = currentName._value.match(/\[([SML])\]/);
-        var size = 'U';
-        if (match != null) { size = match[1];}
-        switch (size) {
-            case 'S':
-                storyUnits += 1;
-                break;
-            case 'M':
-                storyUnits += 2;
-                break;
-            case 'L':
-                storyUnits += 4;
-                break;
-        }
-
+		if (!currentName._value) return true;
+		var storyUnits = getStoryUnit(currentName._value);
+        
 		$columnScopeChange.text(weight + Math.round((storyUnits / teamVelocity) * 100) / 100 + ' day(s)');
 
     });
@@ -439,34 +438,23 @@ function onInitComplete(state) {
     doMagicChartOfDestiny(categories, series, state.targetElement);
 }
 
-function getCardStoryUnits(card) {
-    var match = card.name.match(/\[([SML])\]/);
-    if (match != null) {
-        switch (match[1]) {
-            case 'S':
-                return 1;
-            case 'M':
-                return 2;
-            case 'L':
-                return 4;
-        }
-    }
-};
-
 function sortSeries(series) {
     var sorted = [];
     $.each(series, function (i, item) {
         if (item.name.indexOf('Analysis Complete') != -1) {
             sorted[0] = item;
         }
-        else if (item.name.indexOf('Implementation') != -1) {
+        else if (item.name.indexOf('Design') != -1) {
             sorted[1] = item;
         }
-        else if (item.name.indexOf('Verification') != -1) {
+        else if (item.name.indexOf('Implementation') != -1) {
             sorted[2] = item;
         }
-        else if (item.name.indexOf('Release Ready') != -1) {
+        else if (item.name.indexOf('Verification') != -1) {
             sorted[3] = item;
+        }
+        else if (item.name.indexOf('Release Ready') != -1) {
+            sorted[4] = item;
         }
     });
     return sorted;
@@ -505,6 +493,7 @@ function doMagicChartOfDestiny(categories, series, targetElement) {
     chart = new Highcharts.Chart({
         colors: [
             '#DB843D',
+			'#CD2626',
             '#4572A7',
             '#80699B',
             '#89A54E'
