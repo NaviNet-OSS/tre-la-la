@@ -117,6 +117,7 @@ function getBoardSummaryData(boardId) {
     var currentStoryUnits = 0;
     var storyUnitsComplete = 0;
     var teamVelocity = 1;
+	var blockedDays = 0;
 
     var deferred = $.Deferred();
 
@@ -171,6 +172,8 @@ function getBoardSummaryData(boardId) {
                         }
                     });
                 }
+				
+				blockedDays += getTotalBlockedDays(list.cards);
             });
 
             var storyUnitsLeft = currentStoryUnits - storyUnitsComplete;
@@ -206,7 +209,8 @@ function getBoardSummaryData(boardId) {
                             currentStoryUnits: currentStoryUnits,
                             storyUnitsComplete: storyUnitsComplete,
                             percentComplete: percentComplete,
-                            percentCompleteLabel: percentComplete + '%'
+                            percentCompleteLabel: percentComplete + '%',
+							totalBlockedDays: blockedDays
                         });
                     });
             } else {
@@ -228,6 +232,24 @@ function getBoardSummaryData(boardId) {
         });
 
     return deferred.promise();
+}
+
+function getTotalBlockedDays(cards) {
+	var blockedDays = 0;
+	$.each(cards, function(i, card) {
+		if(!card.name) return -1;
+		
+		var match = card.name.match(/\(\s*\d+\s*\)/);
+		if (match && match[0]) {
+			var numberMatch = match[0].match(/\d+/);
+			if (numberMatch && numberMatch[0]) {
+				blockedDays += parseInt(numberMatch[0]);
+			}
+		}
+		
+	});
+	
+	return blockedDays;
 }
 
 function getScopeChangeHistory(boardId) {
@@ -645,6 +667,8 @@ $.fn.trelalaBoardSummary = function(boardId) {
                 '<td>&nbsp;</td>' +
                 '<td width=\'5px\'></td>' +
                 '<td>Released On: <b>' + data.releasedOn + '</b></td> ' +
+				'<td width=\'5px\'></td>' +
+				'<td>Total days in Blocked: <b><font color=red>' + data.totalBlockedDays + '</font></b></td>' +
             '</tr>' +
             '</table>'
             );
