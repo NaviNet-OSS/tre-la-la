@@ -245,7 +245,7 @@ function getScopeChangeHistory(boardId) {
 			//get card with analyis complete date
 			var analysisCompleteDate = data.meta.analysisCompleteDate;
 			var teamVelocity = data.meta.teamVelocity;
-			
+
 			if (analysisCompleteDate !== null) {
 				$.each(cards, function (ix, card) {
 					if(card.type === "createCard" || card.type === "copyCard" || card.type === "moveCardFromBoard" || card.type === "moveCardToBoard") {
@@ -305,7 +305,7 @@ function appendRowToTable(id, date, $tableScope, weight, teamVelocity, name) {
 
 		if (!currentName._value) return true;
 		var storyUnits = getStoryUnit(currentName._value);
-        
+
 		$columnScopeChange.text(weight + Math.round((storyUnits / teamVelocity) * 100) / 100 + ' day(s)');
 
     });
@@ -402,12 +402,12 @@ function onInitComplete(state) {
                     });
 
     var columnPointsMap = {};
-    
+
     // populate all the series with zeroes
     $.each(listMap, function(id, name) {
         columnPointsMap[id] = $.map(new Array(dates.length), function() { return 0; });
     });
-    
+
     // fill in each series, day by day, card by card
     for(var i = 0; i < dates.length; i++) {
         var date = dates[i];
@@ -429,35 +429,29 @@ function onInitComplete(state) {
         }
     }
 
-    series = sortSeries(
-        $.map(columnPointsMap, function(points, id) {
-            return { name: listMap[id], data: points };
-        })
-    );
+    series = $.map(columnPointsMap, function(points, id) {
+        return { name: listMap[id], data: points };
+    }).sort(compareSeriesItems);
 
     doMagicChartOfDestiny(categories, series, state.targetElement);
 }
 
-function sortSeries(series) {
-    var sorted = [];
-    $.each(series, function (i, item) {
-        if (item.name.indexOf('Analysis Complete') != -1) {
-            sorted[0] = item;
-        }
-        else if (item.name.indexOf('Design') != -1) {
-            sorted[1] = item;
-        }
-        else if (item.name.indexOf('Implementation') != -1) {
-            sorted[2] = item;
-        }
-        else if (item.name.indexOf('Verification') != -1) {
-            sorted[3] = item;
-        }
-        else if (item.name.indexOf('Release Ready') != -1) {
-            sorted[4] = item;
-        }
-    });
-    return sorted;
+function compareSeriesItems(item1, item2) {
+    var getWeight = function(item) {
+        if (item.name.indexOf('Analysis Complete') != -1) return 1;
+        if (item.name.indexOf('Design') != -1) return 2;
+        if (item.name.indexOf('Implementation') != -1) return 3;
+        if (item.name.indexOf('Verification') != -1) return 4;
+        if (item.name.indexOf('Release Ready') != -1) return 5;
+    }
+
+    var item1Weight = getWeight(item1);
+    var item2Weight = getWeight(item2);
+
+    if (item1Weight < item2Weight) return -1;
+    if (item1Weight > item2Weight) return 1;
+
+    return 0;
 }
 
 function isMatchingCardAction(cardAction) {
@@ -489,15 +483,20 @@ function getLastActionOfDay(card, date) {
 }
 
 function doMagicChartOfDestiny(categories, series, targetElement) {
+    var colors = [
+        '#DB843D',
+        '#4572A7',
+        '#80699B',
+        '#89A54E'
+    ];
+
+    if (series.length > 4) {
+        colors.splice(1, 0, '#8895a3');
+    }
+
     var chart;
     chart = new Highcharts.Chart({
-        colors: [
-            '#DB843D',
-			'#CD2626',
-            '#4572A7',
-            '#80699B',
-            '#89A54E'
-        ],
+        colors: colors,
         chart: {
             renderTo: targetElement,
             type: 'area'
@@ -579,7 +578,7 @@ function getMetadata(boardId) {
                         if (match != null && match.length >= 2) {
                             analysisCompleteDate = match[1];
                         }
-						
+
 						match = card.name.match(/^Team\ Velocity\ \(Points\/Day\) ?:\ (.*)$/);
                         if (match != null && match.length >= 2) {
                             teamVelocity = match[1];
