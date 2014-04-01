@@ -239,7 +239,7 @@ function getTotalBlockedDays(cards) {
 	$.each(cards, function(i, card) {
 		if(!card.name) return -1;
 		
-		var match = card.name.match(/\(\s*\d+\s*\)/);
+		var match = card.name.match(/\(\s*\d+\s*(days)*\s*\)/);
 		if (match && match[0]) {
 			var numberMatch = match[0].match(/\d+/);
 			if (numberMatch && numberMatch[0]) {
@@ -339,6 +339,173 @@ function appendRowToTable(id, date, $tableScope, weight, teamVelocity, name) {
     row.appendTo($tableScope);
 }
 
+
+//************************************
+// Frequency Chart functions
+//************************************
+function drawFrequency(boardId, targetElement) {
+	$.when(getReleaseReadyActions(boardId))
+		.done(function (cardDataResult) {onFCInitComplete(cardDataResult, targetElement)})
+}
+
+function onFCInitComplete(cardDataResult, targetElement) {
+	var cards = {}
+	
+	cards = $.map(cardDataResult, function(card, id){
+		var createDate;
+		var lastMoveToReleaseReadyDate;
+		
+		$.each(card.actions, function(idx, action) {
+			if (action.actionType == 'createCard'){
+				createDate = action.date;
+				if(action.newColumnName.indexOf('Release Ready') != -1)
+					lastMoveToReleaseReadyDate = action.date;
+			}
+			else if (action.actionType == 'updateCard'){
+				if (!lastMoveToReleaseReadyDate || action.date.diff(lastMoveToReleaseReadyDate) > 0) 
+					lastMoveToReleaseReadyDate = action.date;
+			}
+		})
+		
+		return {name: card.name, id: card.id, createDate: createDate, doneDate: lastMoveToReleaseReadyDate, daysToComplete: lastMoveToReleaseReadyDate.diff(createDate, 'days')};
+	})
+
+	cards.sort(compareSeriesCards);
+	var cardDoneDates = getCardCompletionDates(cards);
+	var series = getFrequencySeries(cards);
+	drawFrequencyChart(cardDoneDates, series, targetElement);
+}
+
+function compareSeriesCards(item1, item2){
+	return (item1.doneDate > item2.doneDate ? 1: -1);
+}
+
+function getReleaseReadyActions(boardId) {
+    var deferred = $.Deferred();
+	var releaseReadyListId = -1;
+	//Find the list id for the release ready
+    Trello
+        .get('boards/' + boardId + '/lists?fields=name')
+        .success(function(queryResult) {
+			//var releaseReadyListId = -1;
+            $.each(queryResult, function(idx, list) {
+				if (list.name.indexOf('Release Ready') != -1)
+					releaseReadyListId = list.id;
+            });
+			
+			// get all cards in the release ready list
+			Trello
+				.get( 'lists/' + releaseReadyListId + '/cards?actions=createCard,updateCard', function(cards){
+					var state = {};
+
+
+					state = $.map(cards, function(card, idx) {
+						var cardData = $.map(card.actions, function(cardAction, idxAction) {
+							if (cardAction.data.listBefore && (cardAction.type == 'updateCard')) { //by checking for both conditions we filter out updates that are not relatd to card moving
+								return {date: moment(cardAction.date), newColumnId: cardAction.data.listAfter.id, newColumnName: cardAction.data.listAfter.name, actionType: cardAction.type  };
+							} else if (cardAction.data.list && (cardAction.type == 'createCard')){
+								return {date: moment(cardAction.date), newColumnId: cardAction.data.list.id, newColumnName: cardAction.data.list.name, actionType: cardAction.type };
+							} else {
+								return null;
+							}
+							
+						});
+						
+						return {name:card.name, id: card.id, actions: cardData};
+					});
+
+					deferred.resolve(state);
+				});	
+			
+        });
+		
+	
+    return deferred;
+}
+
+function getCardCompletionDates(cards){
+	var dates = $.map(cards, function(card, id) {
+		return card.doneDate.format("M/D");
+	});
+	
+	return dates;
+}
+function getFrequencySeries(cards){
+	//var series = $.map(cards, function(card, id) {
+	//	return {name: card.doneDate.format("M/D"), data: [card.daysToComplete > 0 ?  card.daysToComplete : card.daysToComplete + 0.1]}; //the +0.1 is to make the bar visible 
+	//});
+	
+	var series = new Array(cards.length);
+	for(var i = 0; i < cards.length; i++)
+	{
+		var card = cards[i];
+		series[i] = card.daysToComplete > 0 ?  card.daysToComplete : card.daysToComplete + 0.1; //the +0.1 is to make the bar visible 
+	};
+	
+	return {data: series};
+}
+
+function drawFrequencyChart(cardsDoneDates, series, targetElement) {
+    var chart;
+    chart = new Highcharts.Chart({
+        colors: ['black'],
+		chart: {
+			renderTo: targetElement,
+            type: 'column'
+        },
+        title: {
+            text: 'Frequency Chart'
+        },
+        xAxis: {
+			categories: cardsDoneDates,
+			lineWidth:0,
+			lineColor:'#999',
+			title: {
+				text: 'Date Completed On'	
+			}
+		},
+        yAxis: {
+            title: {
+                text: 'Days to complete story'
+            }
+        },
+		legend: {
+			enabled: false
+		},
+		tooltip: {
+            formatter: function() {
+                return "This user story was done on " + this.x + " in "  + (this.y == 0.1?  0:this.y) + " days";
+            }
+        },
+		plotOptions:{
+			column:{
+				shadow:false,
+				borderWidth:.5,
+				borderColor:'#666',
+				pointPadding:0,
+				groupPadding:0,
+				color: 'rgba(204,204,204,.85)'
+			},
+			spline:{
+				shadow:false,
+				marker:{
+					radius:1
+				}
+			},
+			areaspline:{
+				color:'rgb(69, 114, 167)',
+				fillColor:'rgba(69, 114, 167,.25)',
+				shadow:false,
+				marker:{
+					radius:1
+				}
+			}
+		},		
+        //series: [{name:"4/1", data: [3]}, {name:"4/7", data: [3]}, {name:"4/5", data: [0.1]}]
+		//series: [{data:[1, 3,2]}]
+		series: [series]
+    });
+}
 
 //************************************
 // CFD related functions
@@ -668,7 +835,7 @@ $.fn.trelalaBoardSummary = function(boardId) {
                 '<td width=\'5px\'></td>' +
                 '<td>Released On: <b>' + data.releasedOn + '</b></td> ' +
 				'<td width=\'5px\'></td>' +
-				'<td>Total days in Blocked: <b><font color=red>' + data.totalBlockedDays + '</font></b></td>' +
+				'<td>Total days in Blocked: <b><font ' + (data.totalBlockedDays > 0? 'color=red>': '>') + data.totalBlockedDays + '</font></b></td>' +
             '</tr>' +
             '</table>'
             );
@@ -702,5 +869,10 @@ $.fn.trelalaBoardScopeChangeHistory = function(boardId) {
 
 $.fn.trelalaBoardCfd = function(boardId) {
     drawCFD(boardId, this.attr('id'));
+    return this;
+};
+
+$.fn.trelalaBoardFrequencyChard = function(boardId) {
+    drawFrequency(boardId, this.attr('id'));
     return this;
 };
