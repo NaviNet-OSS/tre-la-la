@@ -442,12 +442,30 @@ function getFrequencySeries(cards){
 		series[i] = card.daysToComplete > 0 ?  card.daysToComplete : card.daysToComplete + 0.1; //the +0.1 is to make the bar visible 
 	};
 	
-	return {data: series};
+	//create the median series
+	var median = getMedian(series.slice(0));
+	var medianSeries = $.map(series, function(s, id){return median});
+	medianSeries.splice(0,0, median); //add a dumy at the begining for a better display.
+	
+	return [{data: series, name: 'User Stories'}, {data: medianSeries, type :'line', name:'Median',color: ['red'], marker: {enabled: false}}];
+}
+
+function getMedian(values) {
+
+    values.sort( function(a,b) {return a - b;} );
+
+    var half = Math.floor(values.length/2);
+
+    if(values.length % 2)
+        return values[half];
+    else
+        return (values[half-1] + values[half]) / 2.0;
 }
 
 function drawFrequencyChart(cardsDoneDates, series, targetElement) {
     var chart;
     chart = new Highcharts.Chart({
+		MyData: "sdfsdfsdF",
         colors: ['black'],
 		chart: {
 			renderTo: targetElement,
@@ -470,11 +488,15 @@ function drawFrequencyChart(cardsDoneDates, series, targetElement) {
             }
         },
 		legend: {
-			enabled: false
+			enabled: true
 		},
 		tooltip: {
-            formatter: function() {
-                return "This user story was done on " + this.x + " in "  + (this.y == 0.1?  0:this.y) + " days";
+			hideDelay: 200,
+            formatter: function(bola) {
+				if (this.series.name == 'Median')
+					return "The Median is:" + this.y;
+				else
+					return "This user story was completed on " + this.x + " in "  + (this.y == 0.1?  0:this.y) + " days";
             }
         },
 		plotOptions:{
@@ -484,26 +506,14 @@ function drawFrequencyChart(cardsDoneDates, series, targetElement) {
 				borderColor:'#666',
 				pointPadding:0,
 				groupPadding:0,
-				color: 'rgba(204,204,204,.85)'
+				color: 'rgba(204,204,204,.85)',
+				pointWidth: 25
 			},
-			spline:{
-				shadow:false,
-				marker:{
-					radius:1
-				}
-			},
-			areaspline:{
-				color:'rgb(69, 114, 167)',
-				fillColor:'rgba(69, 114, 167,.25)',
-				shadow:false,
-				marker:{
-					radius:1
-				}
-			}
+			
 		},		
         //series: [{name:"4/1", data: [3]}, {name:"4/7", data: [3]}, {name:"4/5", data: [0.1]}]
 		//series: [{data:[1, 3,2]}]
-		series: [series]
+		series: series
     });
 }
 
