@@ -84,27 +84,52 @@ function getStoryUnits(cards) {
     return storyUnits;
 }
 
-function getStoryUnit(cardName)
-{
-		var storyUnits = 0;
-        var match = cardName.match(/\[([SML])\]/i);
-        if (match != null) {
-            switch (match[1]) {
-                case 'S':
-				case 's':
-                    storyUnits = 1;
-                    break;
-                case 'M':
-				case 'm':
-                    storyUnits = 2;
-                    break;
-                case 'L':
-				case 'l':
-                    storyUnits = 4;
-                    break;
-            }
+StorySize = {
+	Small: 'S',
+	Medium: 'M',
+	Large: 'L'
+}
+
+function getStoryUnit(cardName){
+    var storyUnits = 0;
+    var size = getStorySize(cardName);
+    if (size != null) {
+        switch (size) {
+            case StorySize.Small:
+                storyUnits = 1;
+                break;
+            case StorySize.Medium:
+                storyUnits = 2;
+                break;
+            case StorySize.Large:
+                storyUnits = 4;
+                break;
         }
-		return storyUnits;
+    }
+    return storyUnits;
+}
+
+function getStorySize(cardName){
+    var match = cardName.match(/\[([SML])\]/i);
+    var size = null;
+    if (match != null) {
+        switch (match[1]) {
+            case 'S':
+            case 's':
+                size = StorySize.Small;
+                break;
+            case 'M':
+            case 'm':
+                size = StorySize.Medium;
+                break;
+            case 'L':
+            case 'l':
+                StorySize.Large;
+                break;
+        }
+    }
+
+    return size;
 }
 
 function getBoardSummaryData(boardId) {
