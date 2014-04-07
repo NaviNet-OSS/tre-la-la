@@ -181,20 +181,44 @@ function getBoardSummaryData(boardId) {
 
             if (analysisCompleteDate !== 'TBD') {
                 var before = moment(analysisCompleteDate).add('days', 1).toISOString();
-                Trello
-                    .get('boards/' + boardId + '/actions', { before: before, limit: 1000 })
-                    .success(function(actions) {
+
+            Trello.get('boards/' + boardId + '/cards', { limit: 1000, filter: ['all'] })
+                .success(function(currentCards) {
+                    Trello.get('boards/' + boardId + '/actions', {
+                        before: before,
+                        limit: 1000,
+                        filter: [
+                            'createCard',
+                            'copyCard',
+                            'deleteCard',
+                            'moveCardFromBoard',
+                            'moveCardToBoard',
+                            'updateCard'
+                        ]
+                    }).success(function(actions) {
+                        actions.sort(function(action1, action2) {
+                            return (action1.date < action2.date ? 1: -1);
+                        });
+
                         var cards = [];
                         var cardIds = [];
+
                         $.each(actions, function(i, action) {
                             if (action.data.card != null
                                 && cardIds.indexOf(action.data.card.id) == -1
-                                && (action.data.list == null || isActiveCol(action.data.list))
-                                && (action.data.listAfter == null || isActiveCol(action.data.listAfter))) {
-                                cards.push(action.data.card);
+                                && ((action.data.list != null && isActiveCol(action.data.list))
+                                    || (action.data.listAfter != null && isActiveCol(action.data.listAfter)))) {
+
+                                $.each(currentCards, function(i, currentCard) {
+                                    if (currentCard.id === action.data.card.id) {
+                                        cards.push(currentCard);
+                                    }
+                                });
+
                                 cardIds.push(action.data.card.id);
                             }
                         });
+
                         plannedStoryUnits = getStoryUnits(cards);
 
                         percentComplete = (storyUnitsComplete / currentStoryUnits * 100).toFixed(1)
@@ -213,6 +237,7 @@ function getBoardSummaryData(boardId) {
                             totalBlockedDays: blockedDays
                         });
                     });
+                });
             } else {
                 percentComplete = (storyUnitsComplete / currentStoryUnits * 100).toFixed(1)
                 deferred.resolve({
