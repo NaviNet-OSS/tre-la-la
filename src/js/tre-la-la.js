@@ -656,7 +656,10 @@ function compareSeriesItems(item1, item2) {
 function isMatchingCardAction(cardAction) {
     return (cardAction.type === 'updateCard' && cardAction.data.listBefore)
         || (cardAction.type === 'createCard')
-        || (cardAction.type === 'updateCard') && (cardAction.data.card && cardAction.data.card.closed) ;
+        || (cardAction.type === 'updateCard') && (cardAction.data.card && cardAction.data.card.closed)
+        || (cardAction.type === 'copyCard')
+        || (cardAction.type === 'moveCardFromBoard')
+        || (cardAction.type === 'moveCardToBoard');
 }
 
 function getLastActionOfDay(card, date) {
@@ -676,7 +679,7 @@ function getLastActionOfDay(card, date) {
         return { name: card.name, id: card.id, date: moment(ret.date), newColumn: ret.data.listAfter.id, cardClosed: (ret.data.card ? ret.data.card.closed : false) };
     } else if(ret.type === 'updateCard' && ret.data.card.closed) {
         return { name: card.name, id: card.id, date: moment(ret.date), newColumn: null, cardClosed: true };
-    } else if (ret.type === 'createCard' && isActiveCol(ret.data.list)) {
+    } else if ((ret.type === 'createCard' && isActiveCol(ret.data.list)) || ret.type === "copyCard" || ret.type === "moveCardFromBoard" || ret.type === "moveCardToBoard")  {
         return { name: card.name, id: card.id, date: moment(ret.date), newColumn: ret.data.list.id, cardClosed: (ret.data.card ? ret.data.card.closed : false) };
     }
 }
