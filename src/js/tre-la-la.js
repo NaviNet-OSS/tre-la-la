@@ -404,7 +404,9 @@ function onFCInitComplete(cardDataResult, targetElement, lists) {
 	cards = $.map(cardDataResult, function(card, id){
 
         var dates = findStartEndDates(card, lists);
-		return {name: card.name, id: card.id, startDate: dates.startDate, doneDate: dates.doneDate, daysToComplete: dates.doneDate.diff(dates.startDate, 'days')};
+        var daysToComplete = Math.ceil(dates.doneDate.diff(dates.startDate, 'minutes') / 1440);
+
+		return {name: card.name, id: card.id, startDate: dates.startDate, doneDate: dates.doneDate, daysToComplete: daysToComplete};
 	})
 
 	cards.sort(compareSeriesCards);
@@ -420,12 +422,14 @@ function findStartEndDates(card, lists) {
     var designId = null;
     var implementationId = null;
     var releaseReadyId = null;
+    var verificationId = null;
 
     $.each(lists.lists, function(id, list){
         if (list.listName.indexOf('Analysis Complete') != -1) analysisCompleteId = list.listId;
         if (list.listName.indexOf('Design') != -1) designId = list.listId;
         if (list.listName.indexOf('Implementation') != -1) implementationId = list.listId;
         if (list.listName.indexOf('Release Ready') != -1) releaseReadyId = list.listId;
+        if (list.listName.indexOf('Verification') != -1) verificationId = list.listId;
 
     });
 
@@ -435,7 +439,7 @@ function findStartEndDates(card, lists) {
             startDate = null;
             doneDate = null;
         }
-        else if ((action.actionType == 'updateCard') && ((action.newColumnId == implementationId) || (action.newColumnId == designId))){
+        else if ((action.actionType == 'updateCard') && ((action.newColumnId == implementationId) || (action.newColumnId == designId) || (action.newColumnId == verificationId))){
             if (!startDate) startDate = action.date;
         }
         else if ((action.actionType == 'updateCard') && (action.newColumnId == releaseReadyId)){
