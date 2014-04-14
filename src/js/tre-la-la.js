@@ -124,7 +124,7 @@ function getStorySize(cardName){
                 break;
             case 'L':
             case 'l':
-                StorySize.Large;
+                size = StorySize.Large;
                 break;
         }
     }
@@ -369,30 +369,17 @@ function appendRowToTable(id, date, $tableScope, weight, teamVelocity, name) {
 // Frequency Chart functions
 //************************************
 function drawFrequency(boardId, targetElement) {
-	$.when(getReleaseReadyActions(boardId))
-		.done(function (cardDataResult) {onFCInitComplete(cardDataResult, targetElement)})
+	$.when(getReleaseReadyActions(boardId), getLists(boardId))
+		.done(function (cardDataResult, lists) {onFCInitComplete(cardDataResult, targetElement, lists)})
 }
 
-function onFCInitComplete(cardDataResult, targetElement) {
+function onFCInitComplete(cardDataResult, targetElement, lists) {
 	var cards = {}
 	
 	cards = $.map(cardDataResult, function(card, id){
-		var createDate;
-		var lastMoveToReleaseReadyDate;
-		
-		$.each(card.actions, function(idx, action) {
-			if (action.actionType == 'createCard'){
-				createDate = action.date;
-				if(action.newColumnName.indexOf('Release Ready') != -1)
-					lastMoveToReleaseReadyDate = action.date;
-			}
-			else if (action.actionType == 'updateCard'){
-				if (!lastMoveToReleaseReadyDate || action.date.diff(lastMoveToReleaseReadyDate) > 0) 
-					lastMoveToReleaseReadyDate = action.date;
-			}
-		})
-		
-		return {name: card.name, id: card.id, createDate: createDate, doneDate: lastMoveToReleaseReadyDate, daysToComplete: lastMoveToReleaseReadyDate.diff(createDate, 'days')};
+
+        var dates = findStartEndDates(card, lists);
+		return {name: card.name, id: card.id, startDate: dates.startDate, doneDate: dates.doneDate, daysToComplete: dates.doneDate.diff(dates.startDate, 'days')};
 	})
 
 	cards.sort(compareSeriesCards);
@@ -401,7 +388,44 @@ function onFCInitComplete(cardDataResult, targetElement) {
 	drawFrequencyChart(cardDoneDates, series, targetElement);
 }
 
-function compareSeriesCards(item1, item2){
+function findStartEndDates(card, lists) {
+    var startDate = null;
+    var doneDate = null;
+    var analysisCompleteId = null;
+    var designId = null;
+    var implementationId = null;
+    var releaseReadyId = null;
+
+    $.each(lists.lists, function(id, list){
+        if (list.listName.indexOf('Analysis Complete') != -1) analysisCompleteId = list.listId;
+        if (list.listName.indexOf('Design') != -1) designId = list.listId;
+        if (list.listName.indexOf('Implementation') != -1) implementationId = list.listId;
+        if (list.listName.indexOf('Release Ready') != -1) releaseReadyId = list.listId;
+
+    });
+
+    for(var i = card.actions.length -1; i >= 0; i--) {
+        var action = card.actions[i];
+        if (action.actionType == 'moveCardToBoard'){
+            startDate = null;
+            doneDate = null;
+        }
+        else if ((action.actionType == 'updateCard') && ((action.newColumnId == implementationId) || (action.newColumnId == designId))){
+            if (!startDate) startDate = action.date;
+        }
+        else if ((action.actionType == 'updateCard') && (action.newColumnId == releaseReadyId)){
+            doneDate = action.date;
+        }
+        else if ((action.actionType == 'createCard') && (action.newColumnId == releaseReadyId)){ //the case of a cards that were created in release ready!
+            doneDate = action.date;
+        }
+    }
+
+    if (!startDate) startDate = doneDate;
+    return {startDate: startDate, doneDate: doneDate};
+}
+
+function compareSeriesCards(item1, item2) {
 	return (item1.doneDate > item2.doneDate ? 1: -1);
 }
 
@@ -420,7 +444,7 @@ function getReleaseReadyActions(boardId) {
 			
 			// get all cards in the release ready list
 			Trello
-				.get( 'lists/' + releaseReadyListId + '/cards?actions=createCard,updateCard', function(cards){
+				.get( 'lists/' + releaseReadyListId + '/cards?actions=createCard,updateCard,moveCardToBoard', function(cards){
 					var state = {};
 
 
@@ -430,6 +454,8 @@ function getReleaseReadyActions(boardId) {
 								return {date: moment(cardAction.date), newColumnId: cardAction.data.listAfter.id, newColumnName: cardAction.data.listAfter.name, actionType: cardAction.type  };
 							} else if (cardAction.data.list && (cardAction.type == 'createCard')){
 								return {date: moment(cardAction.date), newColumnId: cardAction.data.list.id, newColumnName: cardAction.data.list.name, actionType: cardAction.type };
+							} else if (cardAction.type == 'moveCardToBoard') {
+							    return {date: moment(cardAction.date), actionType: cardAction.type  };
 							} else {
 								return null;
 							}
@@ -517,11 +543,12 @@ function drawFrequencyChart(cardsDoneDates, series, targetElement) {
 		},
 		tooltip: {
 			hideDelay: 200,
-            formatter: function(bola) {
+            formatter: function() {
+                var y = (this.y == 0.1)?  0:this.y;
 				if (this.series.name == 'Median')
-					return "The Median is:" + this.y;
+					return "The Median is:" + y;
 				else
-					return "This user story was completed on " + this.x + " in "  + (this.y == 0.1?  0:this.y) + " days";
+					return "This user story was completed on " + this.x + " in "  + y + " days";
             }
         },
 		plotOptions:{
@@ -566,12 +593,14 @@ function getLists(boardId) {
                 return list.name;
             });
 
-            // get map of list id => list name
+            // get map of list id => list name & create a collection of list name/id
             state.listMap = {};
+            state.lists = [];
             $.each(queryResult, function(idx, list) {
                 if(!isActiveCol(list))
                     return null;
                 state.listMap[list.id] = list.name;
+                state.lists.push({listName: list.name, listId: list.id})
             });
 
             deferred.resolve(state);
