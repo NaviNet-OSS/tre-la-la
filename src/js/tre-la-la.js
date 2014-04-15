@@ -511,28 +511,23 @@ function getCardCompletionDates(cards){
     return dates;
 }
 function getFrequencySeries(cards){
-    //var series = $.map(cards, function(card, id) {
-    //  return {name: card.doneDate.format("M/D"), data: [card.daysToComplete > 0 ?  card.daysToComplete : card.daysToComplete + 0.1]}; //the +0.1 is to make the bar visible
-    //});
-
     var series = new Array(cards.length);
     for(var i = 0; i < cards.length; i++)
     {
         var card = cards[i];
-        series[i] = card.daysToComplete > 0 ?  card.daysToComplete : card.daysToComplete + 0.1; //the +0.1 is to make the bar visible
+        series[i] = [card.name, card.daysToComplete > 0 ?  card.daysToComplete : card.daysToComplete + 0.1]; //the +0.1 is to make the bar visible
     };
 
     //create the median series
-    var median = getMedian(series.slice(0));
+    var median = getMedian(series.slice(0))[1];
     var medianSeries = $.map(series, function(s, id){return median});
-    medianSeries.splice(0,0, median); //add a dumy at the begining for a better display.
 
     return [{data: series, name: 'User Stories'}, {data: medianSeries, type :'line', name:'Median',color: ['red'], marker: {enabled: false}}];
 }
 
 function getMedian(values) {
 
-    values.sort( function(a,b) {return a - b;} );
+    values.sort( function(a,b) {return a[1] - b[1];} );
 
     var half = Math.floor(values.length/2);
 
@@ -545,7 +540,6 @@ function getMedian(values) {
 function drawFrequencyChart(cardsDoneDates, series, targetElement) {
     var chart;
     chart = new Highcharts.Chart({
-        MyData: "sdfsdfsdF",
         colors: ['black'],
         chart: {
             renderTo: targetElement,
@@ -577,7 +571,7 @@ function drawFrequencyChart(cardsDoneDates, series, targetElement) {
                 if (this.series.name == 'Median')
 					return "The Median is:" + y;
                 else
-					return "This user story was completed on " + this.x + " in "  + y + " days";
+					return this.key + " was completed on " + this.x + " in "  + y + " days";
             }
         },
 		plotOptions:{
