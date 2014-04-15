@@ -519,7 +519,7 @@ function getFrequencySeries(cards){
     };
 
     //create the median series
-    var median = getMedian(series.slice(0))[1];
+    var median = getMedian(series.slice(0));
     var medianSeries = $.map(series, function(s, id){return median});
 
     return [{data: series, name: 'User Stories'}, {data: medianSeries, type :'line', name:'Median',color: ['red'], marker: {enabled: false}}];
@@ -532,9 +532,9 @@ function getMedian(values) {
     var half = Math.floor(values.length/2);
 
     if(values.length % 2)
-        return values[half];
+        return values[half][1];
     else
-        return (values[half-1] + values[half]) / 2.0;
+        return (values[half-1][1] + values[half][1]) / 2.0;
 }
 
 function drawFrequencyChart(cardsDoneDates, series, targetElement) {
