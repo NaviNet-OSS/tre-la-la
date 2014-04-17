@@ -537,23 +537,53 @@ function getMedian(values) {
         return (values[half-1][1] + values[half][1]) / 2.0;
 }
 
-function drawFrequencyChart(cardsDoneDates, series, targetElement) {
+function getAverage(cards) {
+    var total = 0;
+    $.each(cards, function(id, card){
+        total += card.daysToComplete;
+    })
+
+    return Math.round(total/cards.length);
+}
+function getSizeColor(cardName){
+    var storySize = getStorySize(cardName);
+    switch(storySize) {
+        case StorySize.Small:
+            return "green";
+        case StorySize.Medium:
+            return "darkorange";
+        case StorySize.Large:
+            return "red";
+    }
+}
+function drawFrequencyChart(cards, series, targetElement) {
     var chart;
     chart = new Highcharts.Chart({
         colors: ['black'],
         chart: {
             renderTo: targetElement,
-            type: 'column'
+            type: 'column',
         },
         title: {
-            text: 'Frequency Chart'
+            text: 'Cycle Time Chart'
         },
         xAxis: {
-            categories: cardsDoneDates,
+            categories: cards,
             lineWidth:0,
             lineColor:'#999',
             title: {
                 text: 'Date Completed On'
+            },
+            labels: {
+                useHTML: true,
+                formatter: function() {
+                    var card = this.value;
+
+                    var linkColor;
+                    var url = "https://trello.com/c/"  + card.id;
+                    return '<a href="'+ url +'" target="_blank" style="text-decoration: none">'+
+                        '<font color="' + getSizeColor(card.name) + '">' +card.doneDate.format("MM/DD") +'</font></a>';
+                }
             }
         },
         yAxis: {
