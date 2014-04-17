@@ -410,9 +410,8 @@ function onFCInitComplete(cardDataResult, targetElement, lists) {
 	})
 
 	cards.sort(compareSeriesCards);
-	var cardDoneDates = getCardCompletionDates(cards);
 	var series = getFrequencySeries(cards);
-	drawFrequencyChart(cardDoneDates, series, targetElement);
+	drawFrequencyChart(cards, series, targetElement);
 }
 
 function findStartEndDates(card, lists) {
@@ -503,13 +502,6 @@ function getReleaseReadyActions(boardId) {
     return deferred;
 }
 
-function getCardCompletionDates(cards){
-    var dates = $.map(cards, function(card, id) {
-        return card.doneDate.format("M/D");
-    });
-
-    return dates;
-}
 function getFrequencySeries(cards){
     var series = new Array(cards.length);
     for(var i = 0; i < cards.length; i++)
@@ -519,7 +511,7 @@ function getFrequencySeries(cards){
     };
 
     //create the median series
-    var median = getMedian(series.slice(0));
+    var median = getMedian(series.slice(0)); // we need to pass a copy because it gets modified inside that function
     var medianSeries = $.map(series, function(s, id){return median});
 
     return [{data: series, name: 'User Stories'}, {data: medianSeries, type :'line', name:'Median',color: ['red'], marker: {enabled: false}}];
@@ -578,7 +570,8 @@ function drawFrequencyChart(cards, series, targetElement) {
                 useHTML: true,
                 formatter: function() {
                     var card = this.value;
-
+                    if(!card.name)
+                    return;
                     var linkColor;
                     var url = "https://trello.com/c/"  + card.id;
                     return '<a href="'+ url +'" target="_blank" style="text-decoration: none">'+
@@ -592,7 +585,13 @@ function drawFrequencyChart(cards, series, targetElement) {
             }
         },
         legend: {
-            enabled: true
+            enabled: true,
+            title: {
+                text: 'Average: '+ getAverage(cards) + 'days',
+                style: {
+                    fontWeight: 'normal'
+                }
+                }
         },
         tooltip: {
             hideDelay: 200,
@@ -601,7 +600,7 @@ function drawFrequencyChart(cards, series, targetElement) {
                 if (this.series.name == 'Median')
 					return "The Median is:" + y;
                 else
-					return this.key + " was completed on " + this.x + " in "  + y + " days";
+					return this.key + " was completed on " + this.x.doneDate.format("M/D") + " in "  + y + " days";
             }
         },
 		plotOptions:{
@@ -615,9 +614,8 @@ function drawFrequencyChart(cards, series, targetElement) {
 				pointWidth: 25
 			},
 			
-		},		
-        //series: [{name:"4/1", data: [3]}, {name:"4/7", data: [3]}, {name:"4/5", data: [0.1]}]
-        //series: [{data:[1, 3,2]}]
+		},
+
         series: series
     });
 }
