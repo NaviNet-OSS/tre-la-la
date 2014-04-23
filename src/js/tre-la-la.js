@@ -396,11 +396,11 @@ function appendRowToTable(id, date, $tableScope, weight, teamVelocity, name) {
 // Frequency Chart functions
 //************************************
 function drawFrequency(boardId, targetElement) {
-	$.when(getReleaseReadyActions(boardId), getLists(boardId))
-		.done(function (cardDataResult, lists) {onFCInitComplete(cardDataResult, targetElement, lists)})
+	$.when(getReleaseReadyActions(boardId), getLists(boardId), getMetadata(boardId))
+		.done(function (cardDataResult, lists, metaData) {onFCInitComplete(cardDataResult, targetElement, lists, metaData)})
 }
 
-function onFCInitComplete(cardDataResult, targetElement, lists) {
+function onFCInitComplete(cardDataResult, targetElement, lists, metaData) {
 	var cards = {}
 
 	cards = $.map(cardDataResult, function(card, id){
@@ -413,7 +413,7 @@ function onFCInitComplete(cardDataResult, targetElement, lists) {
 
 	cards.sort(compareSeriesCards);
 	var series = getFrequencySeries(cards);
-	drawFrequencyChart(cards, series, targetElement);
+	drawFrequencyChart(cards, series, targetElement, metaData);
 }
 
 function findStartEndDates(card, lists) {
@@ -550,7 +550,27 @@ function getSizeColor(cardName){
             return "red";
     }
 }
-function drawFrequencyChart(cards, series, targetElement) {
+
+function getVelocity(cards, metaData)
+{
+    var storiesCompleted = cards.length;
+    var averageStoriesPerWeek = 'N/A';
+    var doneDate;
+
+
+    var doneDate = metaData.meta.releasedOn
+    var kickoffDate = metaData.meta.kickoffDate;
+
+    var endDate = (doneDate.isValid && moment() > doneDate) ? doneDate : moment();
+    var weeksPassed = endDate.diff(kickoffDate, 'week');
+    weeksPassed+= endDate.day() * 0.2; //crude approximation assuming each week day is 0.2 of a week
+
+    averageStoriesPerWeek = Math.round(storiesCompleted / weeksPassed);
+
+    return averageStoriesPerWeek;
+
+}
+function drawFrequencyChart(cards, series, targetElement, metaData) {
     var chart;
     chart = new Highcharts.Chart({
         colors: ['black'],
@@ -589,7 +609,7 @@ function drawFrequencyChart(cards, series, targetElement) {
         legend: {
             enabled: true,
             title: {
-                text: 'Average: '+ getAverage(cards) + 'days',
+                text: 'Average: '+ getAverage(cards) + 'days | Velocity (stories/week): ' + getVelocity(cards, metaData),
                 style: {
                     fontWeight: 'normal'
                 }
@@ -621,7 +641,6 @@ function drawFrequencyChart(cards, series, targetElement) {
         series: series
     });
 }
-
 //************************************
 // CFD related functions
 //************************************
@@ -704,7 +723,7 @@ function onInitComplete(state) {
     dates = buildDateSeries(meta.kickoffDate);
     categories = $.map(dates,
                     function(date, idx) {
-                        return date.format('MM/DD/YYYY');
+                        return date.format('MM/DD');
                     });
 
     var columnPointsMap = {};
@@ -898,7 +917,7 @@ function getMetadata(boardId) {
                             releaseReadyDate = match[1];
                         }
 
-                        match = card.name.match(/^Releases\ On:\ (.*)$/);
+                        match = card.name.match(/^Released\ On:\ (.*)$/);
                         if (match != null && match.length >= 2) {
                             releasedOn = match[1];
                         }
@@ -911,7 +930,7 @@ function getMetadata(boardId) {
                     analysisCompleteDate: moment(analysisCompleteDate),
                     teamVelocity: teamVelocity,
                     releaseReadyDate: moment(releaseReadyDate),
-                    releasedOn: releasedOn
+                    releasedOn: moment(releasedOn)
                 }
             });
         });
