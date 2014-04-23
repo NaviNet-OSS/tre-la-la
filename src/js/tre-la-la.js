@@ -6,7 +6,8 @@ function createPercentageCompleteChart(id, complete, size) {
     title = complete.toString() + "%"
     fontSize = size < 180 ? '16px' : '24px'
     innerSize = size <= 100 ? '75%' : '70%'
-
+    yOffset = size < 180 ? 8 : 12;
+    
     var colors = [ '#BBBBBB', '#00CC66', '#F7464A'];
     $(id).highcharts({
         chart: {
@@ -23,6 +24,7 @@ function createPercentageCompleteChart(id, complete, size) {
             text: title,
             align: 'center',
             verticalAlign: 'middle',
+            y: yOffset,
             style: { fontSize: fontSize }
         },
         tooltip: false,
@@ -400,7 +402,7 @@ function drawFrequency(boardId, targetElement) {
 
 function onFCInitComplete(cardDataResult, targetElement, lists) {
 	var cards = {}
-	
+
 	cards = $.map(cardDataResult, function(card, id){
 
         var dates = findStartEndDates(card, lists);
@@ -487,18 +489,18 @@ function getReleaseReadyActions(boardId) {
 					} else {
 						return null;
 					}
-							
+
 				});
-						
+
 				return {name:card.name, id: card.id, actions: cardData};
 			});
 
 			deferred.resolve(state);
-		});	
-			
+		});
+
         });
-		
-	
+
+
     return deferred;
 }
 
@@ -613,7 +615,7 @@ function drawFrequencyChart(cards, series, targetElement) {
 				color: 'rgba(204,204,204,.85)',
 				pointWidth: 25
 			},
-			
+
 		},
 
         series: series
@@ -971,7 +973,8 @@ $.fn.trelalaBoardDashboardSummary = function(boardId) {
             '<td id=\'' + completeId + '\'></td> ' +
             '<td>' +
             '<div>Confidence: <b>' + data.confidence + '</b></div>' +
-            '<div>Target date: <b>' + moment(data.projectedDoneDate).format("MM/DD/YYYY") + '</b></div>' +
+            '<div>Kickoff Date: <b>' + moment(data.kickoffDate).format("MM/DD/YYYY") + '</b></div>' +
+            '<div>Target Date: <b>' + moment(data.projectedDoneDate).format("MM/DD/YYYY") + '</b></div>' +
             '</td>' +
             '</tr></table>'
             );
