@@ -6,7 +6,8 @@ function createPercentageCompleteChart(id, complete, size) {
     title = complete.toString() + "%"
     fontSize = size < 180 ? '16px' : '24px'
     innerSize = size <= 100 ? '75%' : '70%'
-
+    yOffset = size < 180 ? 8 : 12;
+    
     var colors = [ '#BBBBBB', '#00CC66', '#F7464A'];
     $(id).highcharts({
         chart: {
@@ -23,6 +24,7 @@ function createPercentageCompleteChart(id, complete, size) {
             text: title,
             align: 'center',
             verticalAlign: 'middle',
+            y: yOffset,
             style: { fontSize: fontSize }
         },
         tooltip: false,
