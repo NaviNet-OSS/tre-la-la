@@ -230,7 +230,7 @@ function getBoardSummaryData(boardId) {
 
                         $.each(actions, function(i, action) {
                             if (action.data.card != null
-                                && cardIds.indexOf(action.data.card.id) == -1
+                                && $.inArray(action.data.card.id, cardIds) == -1
                                 && ((action.data.list != null && isActiveCol(action.data.list))
                                     || (action.data.listAfter != null && isActiveCol(action.data.listAfter)))) {
 
