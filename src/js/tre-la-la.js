@@ -720,7 +720,7 @@ function onInitComplete(state) {
 
     // data points
     //categories = $.map(cardActions, function(cardAction, idx) { return cardAction.date; });
-    dates = buildDateSeries(meta.kickoffDate);
+    dates = buildDateSeries(meta.kickoffDate, meta.releasedOn);
     categories = $.map(dates,
                     function(date, idx) {
                         return date.format('MM/DD');
@@ -865,11 +865,12 @@ function doMagicChartOfDestiny(categories, series, targetElement) {
     });
 }
 
-function buildDateSeries(startDate) {
+function buildDateSeries(startDate, releaseDate) {
     var series = [];
     var currentDate = startDate;
     var today = moment();
-    while(currentDate < today) {
+    var endDate = (!releaseDate) ? today : releaseDate
+    while(currentDate < endDate) {
         series.push(currentDate);
         currentDate = currentDate.clone().add(1, 'day');
     }
