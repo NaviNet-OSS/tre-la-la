@@ -869,7 +869,7 @@ function buildDateSeries(startDate, releaseDate) {
     var series = [];
     var currentDate = startDate;
     var today = moment();
-    var endDate = (!releaseDate) ? today : releaseDate
+    var endDate = (!releaseDate || !releaseDate.isValid()) ? today : releaseDate
     while(currentDate < endDate) {
         series.push(currentDate);
         currentDate = currentDate.clone().add(1, 'day');
