@@ -1,0 +1,27 @@
+<!doctype html>
+<html>
+<head>
+    <title>Trelala test page</title>
+    <script src="http://code.jquery.com/jquery-1.11.0.min.js"></script>
+    <script src="http://momentjs.com/downloads/moment.min.js"></script>
+    <script src="https://api.trello.com/1/client.js?key=f5613f90a2a2b7b56334453aeff8f858"></script>
+    <script src="http://code.highcharts.com/highcharts.js"></script>
+    <script type="text/javascript" src="../src/js/tre-la-la.js"></script>
+    <script>
+    var boardId = 'Dw47Ej5u';
+    $(document).ready(function() {
+       $('#tre-la-la-status').trelalaBoardSummary(boardId);
+       $('#tre-la-la-scope-change-history').trelalaBoardScopeChangeHistory(boardId);
+       $('#tre-la-la-cfd').trelalaBoardCfd(boardId);
+       $('#tre-la-la-frequency-chart').trelalaBoardFrequencyChard(boardId);
+    });
+    </script>
+
+</head>
+<body>
+    <div id="tre-la-la-status"></div>
+    <div id="tre-la-la-cfd" style="min-width: 310px; height: 400px; margin: 0 auto"></div>
+    <div id="tre-la-la-scope-change-history"></div>
+    <div id="tre-la-la-frequency-chart"></div>
+</body>
+</html>
