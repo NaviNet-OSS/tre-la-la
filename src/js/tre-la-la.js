@@ -125,6 +125,11 @@ var Trelala = (function(){
         var blockedDays = 0;
         var meta;
 
+        var formatDate = function(date) {
+            var momentDate = moment(date);
+            return momentDate.isValid() ? momentDate.format('MM/DD/YYYY') : 'TBD';
+        };
+
         var deferred = $.Deferred();
 
         Trello
@@ -192,11 +197,11 @@ var Trelala = (function(){
                                 percentComplete = (storyUnitsComplete / currentStoryUnits * 100).toFixed(1)
                                 deferred.resolve({
                                     confidence: meta.confidence,
-                                    projectedDoneDate: moment(projectedDoneDate).format("MM/DD/YYYY"),
-                                    kickoffDate: meta.kickoffDate.format('MM/DD/YYYY'),
-                                    analysisCompleteDate: meta.analysisCompleteDate.format('MM/DD/YYYY'),
-                                    releaseReadyDate: meta.releaseReadyDate.format('MM/DD/YYYY'),
-                                    releasedOn: meta.releasedOn.format('MM/DD/YYYY'),
+                                    projectedDoneDate: formatDate(projectedDoneDate),
+                                    kickoffDate: formatDate(meta.kickoffDate),
+                                    analysisCompleteDate: formatDate(meta.analysisCompleteDate),
+                                    releaseReadyDate: formatDate(meta.releaseReadyDate),
+                                    releasedOn: formatDate(meta.releasedOn),
                                     plannedStoryUnits: plannedStoryUnits,
                                     currentStoryUnits: currentStoryUnits,
                                     storyUnitsComplete: storyUnitsComplete,
@@ -210,11 +215,11 @@ var Trelala = (function(){
                     percentComplete = (storyUnitsComplete / currentStoryUnits * 100).toFixed(1)
                     deferred.resolve({
                         confidence: meta.confidence,
-                        projectedDoneDate: moment(projectedDoneDate).format("MM/DD/YYYY"),
-                        kickoffDate: meta.kickoffDate.format('MM/DD/YYYY'),
-                        analysisCompleteDate: meta.analysisCompleteDate.format('MM/DD/YYYY'),
-                        releaseReadyDate: meta.releaseReadyDate.format('MM/DD/YYYY'),
-                        releasedOn: meta.releasedOn.format('MM/DD/YYYY'),
+                        projectedDoneDate: formatDate(projectedDoneDate),
+                        kickoffDate: formatDate(meta.kickoffDate),
+                        analysisCompleteDate: formatDate(meta.analysisCompleteDate),
+                        releaseReadyDate: formatDate(meta.releaseReadyDate),
+                        releasedOn: formatDate(meta.releasedOn),
                         plannedStoryUnits: plannedStoryUnits,
                         currentStoryUnits: currentStoryUnits,
                         storyUnitsComplete: storyUnitsComplete,
