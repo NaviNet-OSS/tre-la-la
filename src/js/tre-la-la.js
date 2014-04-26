@@ -152,7 +152,7 @@ var Trelala = (function(){
                 var storyUnitsLeft = currentStoryUnits - storyUnitsComplete;
                 var projectedDoneDate = addWeekdays(new Date(), storyUnitsLeft / meta.teamVelocity);
 
-                if (meta.analysisCompleteDate !== 'TBD') {
+                if (formatDate(meta.analysisCompleteDate) !== 'TBD') {
                     var before = moment(meta.analysisCompleteDate).add('days', 1).toISOString();
 
                     Trello.get('boards/' + boardId + '/cards', { limit: 1000, filter: ['all'] })
