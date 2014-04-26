@@ -119,145 +119,102 @@ var Trelala = (function(){
     }
 
     function getBoardSummaryData(boardId) {
-        var confidence = 'TBD';
-        var kickoffDate = 'TBD';
-        var analysisCompleteDate = 'TBD';
-        var releaseReadyDate = 'TBD';
-        var releasedOn = 'TBD';
         var plannedStoryUnits = 0;
         var currentStoryUnits = 0;
         var storyUnitsComplete = 0;
-        var teamVelocity = 1;
         var blockedDays = 0;
+        var meta;
 
         var deferred = $.Deferred();
 
         Trello
             .get('boards/' + boardId + '/lists?cards=open')
             .success(function(lists) {
-                var analysisCompleteColId = null;
-
                 $.each(lists, function(ix, list) {
                     if (isActiveCol(list)) {
                         currentStoryUnits += getCardListStoryUnits(list.cards);
-                    }
-
-                    if (list.name.indexOf('Analysis Complete') != -1) {
-                        analysisCompleteColId = list.id;
                     }
 
                     if (list.name.indexOf('Release Ready') != -1) {
                         storyUnitsComplete += getCardListStoryUnits(list.cards);
                     }
 
-                    if (list.name.indexOf('Meta') != -1) {
-                        $.each(list.cards, function(ix, card) {
-                            var match = card.name.match(/^Confidence:\ (.*)$/);
-                            if (match != null && match.length >= 2) {
-                                confidence = match[1];
-                            }
-
-                            match = card.name.match(/^Kickoff\ Date:\ (.*)$/);
-                            if (match != null && match.length >= 2) {
-                                kickoffDate = match[1];
-                            }
-
-                            match = card.name.match(/^Analysis\ Complete\ Date:\ (.*)$/);
-                            if (match != null && match.length >= 2) {
-                                analysisCompleteDate = match[1];
-                            }
-
-                            match = card.name.match(/^Team\ Velocity\ \(Points\/Day\) ?:\ (.*)$/);
-                            if (match != null && match.length >= 2) {
-                                teamVelocity = match[1];
-                            }
-
-                            match = card.name.match(/^Release\ Ready\ Date:\ (.*)$/);
-                            if (match != null && match.length >= 2) {
-                                releaseReadyDate = match[1];
-                            }
-
-                            match = card.name.match(/^Released\ On:\ (.*)$/);
-                            if (match != null && match.length >= 2) {
-                                releasedOn = match[1];
-                            }
-                        });
-                    }
-
                     blockedDays += getTotalBlockedDays(list.cards);
                 });
 
+                meta = extractMetadata(lists).meta;
+
                 var storyUnitsLeft = currentStoryUnits - storyUnitsComplete;
-                var projectedDoneDate = addWeekdays(new Date(), storyUnitsLeft / teamVelocity);
+                var projectedDoneDate = addWeekdays(new Date(), storyUnitsLeft / meta.teamVelocity);
 
-                if (analysisCompleteDate !== 'TBD') {
-                    var before = moment(analysisCompleteDate).add('days', 1).toISOString();
+                if (meta.analysisCompleteDate !== 'TBD') {
+                    var before = moment(meta.analysisCompleteDate).add('days', 1).toISOString();
 
-                Trello.get('boards/' + boardId + '/cards', { limit: 1000, filter: ['all'] })
-                    .success(function(currentCards) {
-                        Trello.get('boards/' + boardId + '/actions', {
-                            before: before,
-                            limit: 1000,
-                            filter: [
-                                'createCard',
-                                'copyCard',
-                                'deleteCard',
-                                'moveCardFromBoard',
-                                'moveCardToBoard',
-                                'updateCard'
-                            ]
-                        }).success(function(actions) {
-                            actions.sort(function(action1, action2) {
-                                return (action1.date < action2.date ? 1: -1);
-                            });
+                    Trello.get('boards/' + boardId + '/cards', { limit: 1000, filter: ['all'] })
+                        .success(function(currentCards) {
+                            Trello.get('boards/' + boardId + '/actions', {
+                                before: before,
+                                limit: 1000,
+                                filter: [
+                                    'createCard',
+                                    'copyCard',
+                                    'deleteCard',
+                                    'moveCardFromBoard',
+                                    'moveCardToBoard',
+                                    'updateCard'
+                                ]
+                            }).success(function(actions) {
+                                actions.sort(function(action1, action2) {
+                                    return (action1.date < action2.date ? 1: -1);
+                                });
 
-                            var cards = [];
-                            var cardIds = [];
+                                var cards = [];
+                                var cardIds = [];
 
-                            $.each(actions, function(i, action) {
-                                if (action.data.card != null
-                                    && $.inArray(action.data.card.id, cardIds) == -1
-                                    && ((action.data.list != null && isActiveCol(action.data.list))
-                                        || (action.data.listAfter != null && isActiveCol(action.data.listAfter)))) {
+                                $.each(actions, function(i, action) {
+                                    if (action.data.card != null
+                                        && $.inArray(action.data.card.id, cardIds) == -1
+                                        && ((action.data.list != null && isActiveCol(action.data.list))
+                                            || (action.data.listAfter != null && isActiveCol(action.data.listAfter)))) {
 
-                                    $.each(currentCards, function(i, currentCard) {
-                                        if (currentCard.id === action.data.card.id) {
-                                            cards.push(currentCard);
-                                        }
-                                    });
+                                        $.each(currentCards, function(i, currentCard) {
+                                            if (currentCard.id === action.data.card.id) {
+                                                cards.push(currentCard);
+                                            }
+                                        });
 
-                                    cardIds.push(action.data.card.id);
-                                }
-                            });
+                                        cardIds.push(action.data.card.id);
+                                    }
+                                });
 
-                            plannedStoryUnits = getCardListStoryUnits(cards);
+                                plannedStoryUnits = getCardListStoryUnits(cards);
 
-                            percentComplete = (storyUnitsComplete / currentStoryUnits * 100).toFixed(1)
-                            deferred.resolve({
-                                confidence: confidence,
-                                projectedDoneDate: moment(projectedDoneDate).format("MM/DD/YYYY"),
-                                kickoffDate: kickoffDate,
-                                analysisCompleteDate: analysisCompleteDate,
-                                releaseReadyDate: releaseReadyDate,
-                                releasedOn: releasedOn,
-                                plannedStoryUnits: plannedStoryUnits,
-                                currentStoryUnits: currentStoryUnits,
-                                storyUnitsComplete: storyUnitsComplete,
-                                percentComplete: percentComplete,
-                                percentCompleteLabel: percentComplete + '%',
-                                totalBlockedDays: blockedDays
+                                percentComplete = (storyUnitsComplete / currentStoryUnits * 100).toFixed(1)
+                                deferred.resolve({
+                                    confidence: meta.confidence,
+                                    projectedDoneDate: moment(projectedDoneDate).format("MM/DD/YYYY"),
+                                    kickoffDate: meta.kickoffDate.format('MM/DD/YYYY'),
+                                    analysisCompleteDate: meta.analysisCompleteDate.format('MM/DD/YYYY'),
+                                    releaseReadyDate: meta.releaseReadyDate.format('MM/DD/YYYY'),
+                                    releasedOn: meta.releasedOn.format('MM/DD/YYYY'),
+                                    plannedStoryUnits: plannedStoryUnits,
+                                    currentStoryUnits: currentStoryUnits,
+                                    storyUnitsComplete: storyUnitsComplete,
+                                    percentComplete: percentComplete,
+                                    percentCompleteLabel: percentComplete + '%',
+                                    totalBlockedDays: blockedDays
+                                });
                             });
                         });
-                    });
                 } else {
                     percentComplete = (storyUnitsComplete / currentStoryUnits * 100).toFixed(1)
                     deferred.resolve({
-                        confidence: confidence,
+                        confidence: meta.confidence,
                         projectedDoneDate: moment(projectedDoneDate).format("MM/DD/YYYY"),
-                        kickoffDate: kickoffDate,
-                        analysisCompleteDate: analysisCompleteDate,
-                        releaseReadyDate: releaseReadyDate,
-                        releasedOn: releasedOn,
+                        kickoffDate: meta.kickoffDate.format('MM/DD/YYYY'),
+                        analysisCompleteDate: meta.analysisCompleteDate.format('MM/DD/YYYY'),
+                        releaseReadyDate: meta.releaseReadyDate.format('MM/DD/YYYY'),
+                        releasedOn: meta.releasedOn.format('MM/DD/YYYY'),
                         plannedStoryUnits: plannedStoryUnits,
                         currentStoryUnits: currentStoryUnits,
                         storyUnitsComplete: storyUnitsComplete,
@@ -299,40 +256,40 @@ var Trelala = (function(){
 
         getMetadata(boardId).done(function(data) {
            Trello.get('boards/' + boardId + '/actions?filter=createCard,copyCard,updateCard:idList,moveCardFromBoard,moveCardToBoard,updateCard:closed', { limit: 1000 })
-           .success(function (cards) {
+           .success(function (actions) {
                 //get card with analyis complete date
                 var analysisCompleteDate = data.meta.analysisCompleteDate;
                 var teamVelocity = data.meta.teamVelocity;
 
                 if (analysisCompleteDate !== null) {
-                    $.each(cards, function (ix, card) {
-                        if(card.type === "createCard" || card.type === "copyCard" || card.type === "moveCardFromBoard" || card.type === "moveCardToBoard") {
-                            if (isActiveCol(card.data.list)) {
-                                var daysDiff = moment(moment(card.date)).diff(moment(analysisCompleteDate), 'days');
+                    $.each(actions, function (ix, action) {
+                        if(action.type === "createCard" || action.type === "copyCard" || action.type === "moveCardFromBoard" || action.type === "moveCardToBoard") {
+                            if (isActiveCol(action.data.list)) {
+                                var daysDiff = moment(moment(action.date)).diff(moment(analysisCompleteDate), 'days');
                                 if (daysDiff > 0) {
                                     var weight = "+";
-                                    if(card.type === "moveCardFromBoard") { weight = "-"; }
+                                    if(action.type === "moveCardFromBoard") { weight = "-"; }
                                     //get current state of the card
-                                    appendRowToTable(card.data.card.id, card.date, $tableScope, weight, teamVelocity, card.data.card.name);
+                                    appendRowToTable(action.data.card.id, action.date, $tableScope, weight, teamVelocity, action.data.card.name);
                                 }
                             }
                         }
                         else {
                             //TODO: Archived items
-                            if(card.type === "updateCard" && card.data.card.closed) {
-                                if (moment(card.date).diff(moment(analysisCompleteDate), 'days') > 0) {
-                                    Trello.get('cards/' + card.data.card.id + '/list', function(singlelist) {
+                            if(action.type === "updateCard" && action.data.card.closed) {
+                                if (moment(action.date).diff(moment(analysisCompleteDate), 'days') > 0) {
+                                    Trello.get('cards/' + action.data.card.id + '/list', function(singlelist) {
                                         if (isActiveCol(singlelist)) {
-                                            appendRowToTable(card.data.card.id, card.date,  $tableScope, "-", teamVelocity, card.data.card.name);
+                                            appendRowToTable(action.data.card.id, action.date,  $tableScope, "-", teamVelocity, action.data.card.name);
                                         }
                                     });
                                 }
-                            } else if(!isActiveCol(card.data.listBefore) && isActiveCol(card.data.listAfter)
-                            && (moment(card.date).diff(moment(analysisCompleteDate), 'days') > 0)) {
-                                appendRowToTable(card.data.card.id, card.date,  $tableScope, "+", teamVelocity, card.data.card.name);
-                            } else if(isActiveCol(card.data.listBefore) && !isActiveCol(card.data.listAfter)
-                            && (moment(card.date).diff(moment(analysisCompleteDate), 'days') > 0)) {
-                                appendRowToTable(card.data.card.id, card.date, $tableScope, "-", teamVelocity, card.data.card.name);
+                            } else if(!isActiveCol(action.data.listBefore) && isActiveCol(action.data.listAfter)
+                            && (moment(action.date).diff(moment(analysisCompleteDate), 'days') > 0)) {
+                                appendRowToTable(action.data.card.id, action.date,  $tableScope, "+", teamVelocity, action.data.card.name);
+                            } else if(isActiveCol(action.data.listBefore) && !isActiveCol(action.data.listAfter)
+                            && (moment(action.date).diff(moment(analysisCompleteDate), 'days') > 0)) {
+                                appendRowToTable(action.data.card.id, action.date, $tableScope, "-", teamVelocity, action.data.card.name);
                             }
                         }
                     });
@@ -358,20 +315,18 @@ var Trelala = (function(){
         //calculate card points before date
         $columnScopeChange.addClass('confluenceTd').appendTo(row);
 
-        Trello.get('cards/' + id + '/name', function (currentName) {
-            $columnName.text(currentName._value);
+        Trello.get('cards/' + id, function(card) {
+            $columnName.text(card.name);
 
-            if (!currentName._value) return true;
-            var storyUnits = getCardStoryUnits(currentName._value);
+            if (!card.name) return true;
+            var storyUnits = getCardStoryUnits(card.name);
 
             $columnScopeChange.text(weight + Math.round((storyUnits / teamVelocity) * 100) / 100 + ' day(s)');
 
+            // get reason from description
+            $('<td>' + card.desc + '</td>').addClass('confluenceTd').appendTo(row);
         });
 
-        //get reason from description
-        Trello.get('cards/' + id + '/desc', function (desc) {
-            $('<td>' + desc._value + '</td>').addClass('confluenceTd').appendTo(row);
-        });
         row.appendTo($tableScope);
     }
 
@@ -862,62 +817,62 @@ var Trelala = (function(){
         return series;
     }
 
+    function extractMetadata(lists) {
+        var confidence, kickoffDate, analysisCompleteDate, teamVelocity, releaseReadyDate, releasedOn;
+        $.each(lists, function(ix, list) {
+            if (list.name.indexOf('Meta') != -1) {
+                $.each(list.cards, function(ix, card) {
+                    var match = card.name.match(/^Confidence:\ (.*)$/);
+                    if (match != null && match.length >= 2) {
+                        confidence = match[1];
+                    }
+
+                    match = card.name.match(/^Kickoff\ Date:\ (.*)$/);
+                    if (match != null && match.length >= 2) {
+                        kickoffDate = match[1];
+                    }
+
+                    match = card.name.match(/^Analysis\ Complete\ Date:\ (.*)$/);
+                    if (match != null && match.length >= 2) {
+                        analysisCompleteDate = match[1];
+                    }
+
+                    match = card.name.match(/^Team\ Velocity\ \(Points\/Day\) ?:\ (.*)$/);
+                    if (match != null && match.length >= 2) {
+                        teamVelocity = match[1];
+                    }
+
+                    match = card.name.match(/^Release\ Ready\ Date:\ (.*)$/);
+                    if (match != null && match.length >= 2) {
+                        releaseReadyDate = match[1];
+                    }
+
+                    match = card.name.match(/^Released\ On:\ (.*)$/);
+                    if (match != null && match.length >= 2) {
+                        releasedOn = match[1];
+                    }
+                });
+            }
+        });
+
+        return {
+            meta: {
+                confidence: confidence,
+                kickoffDate: moment(kickoffDate),
+                analysisCompleteDate: moment(analysisCompleteDate),
+                teamVelocity: teamVelocity,
+                releaseReadyDate: moment(releaseReadyDate),
+                releasedOn: moment(releasedOn)
+            }
+        };
+    }
+
     function getMetadata(boardId) {
         var deferred = $.Deferred();
-        var kickoffDate, analysisCompleteDate, teamVelocity, releaseReadyDate, releasedOn;
         Trello
             .get('boards/' + boardId + '/lists?cards=open')
             .success(function(lists) {
-                var analysisCompleteColId = null;
-
-                $.each(lists, function(ix, list) {
-                    if (list.name.indexOf('Analysis Complete') != -1) {
-                        analysisCompleteColId = list.id;
-                    }
-
-                    if (list.name.indexOf('Meta') != -1) {
-                        $.each(list.cards, function(ix, card) {
-                            var match = card.name.match(/^Confidence:\ (.*)$/);
-                            if (match != null && match.length >= 2) {
-                                confidence = match[1];
-                            }
-
-                            match = card.name.match(/^Kickoff\ Date:\ (.*)$/);
-                            if (match != null && match.length >= 2) {
-                                kickoffDate = match[1];
-                            }
-
-                            match = card.name.match(/^Analysis\ Complete\ Date:\ (.*)$/);
-                            if (match != null && match.length >= 2) {
-                                analysisCompleteDate = match[1];
-                            }
-
-                            match = card.name.match(/^Team\ Velocity\ \(Points\/Day\) ?:\ (.*)$/);
-                            if (match != null && match.length >= 2) {
-                                teamVelocity = match[1];
-                            }
-
-                            match = card.name.match(/^Release\ Ready\ Date:\ (.*)$/);
-                            if (match != null && match.length >= 2) {
-                                releaseReadyDate = match[1];
-                            }
-
-                            match = card.name.match(/^Released\ On:\ (.*)$/);
-                            if (match != null && match.length >= 2) {
-                                releasedOn = match[1];
-                            }
-                        });
-                    }
-                });
-                deferred.resolve({
-                    meta : {
-                        kickoffDate: moment(kickoffDate),
-                        analysisCompleteDate: moment(analysisCompleteDate),
-                        teamVelocity: teamVelocity,
-                        releaseReadyDate: moment(releaseReadyDate),
-                        releasedOn: moment(releasedOn)
-                    }
-                });
+                deferred.resolve(extractMetadata(lists));
             });
         return deferred.promise();
     }
