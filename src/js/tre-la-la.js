@@ -193,7 +193,7 @@ var Trelala = (function(){
 
                                 plannedStoryUnits = getCardListStoryUnits(cards);
 
-                                percentComplete = (storyUnitsComplete / currentStoryUnits * 100).toFixed(1)
+                                percentComplete = (storyUnitsComplete / currentStoryUnits * 100).toFixed()
                                 deferred.resolve({
                                     confidence: meta.confidence,
                                     projectedDoneDate: formatDate(projectedDoneDate),
