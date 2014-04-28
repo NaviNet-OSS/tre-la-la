@@ -464,7 +464,7 @@ var Trelala = (function(){
             data: medianSeries,
             type: 'line',
             name: 'Median',
-            color: ['red'],
+            color: 'red',
             marker: { enabled: false }
         }];
     }
