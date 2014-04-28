@@ -68,11 +68,16 @@ var Trelala = (function(){
         while (days > 0) {
             date = date.add(1, 'days');
             // decrease "days" only if it's a weekday.
-            if (date.isoWeekday() !== 6 && date.isoWeekday() !== 7) {
+            if (isBusinessDay(date)) {
                 days -= 1;
             }
         }
         return date;
+    }
+
+    function isBusinessDay(date)
+    {
+        return (date.isoWeekday() !== 6 && date.isoWeekday() !== 7);
     }
 
     function isActiveCol(list) {
@@ -510,10 +515,10 @@ var Trelala = (function(){
         var averageStoriesPerWeek = 'N/A';
         var doneDate;
 
-        var doneDate = metaData.meta.releasedOn
+        var mvfDoneDate = metaData.meta.releasedOn
         var kickoffDate = metaData.meta.kickoffDate;
 
-        var endDate = (doneDate.isValid && moment() > doneDate) ? doneDate : moment();
+        var endDate = (mvfDoneDate.isValid() && moment() > mvfDoneDate) ? mvfDoneDate : moment();
         var weeksPassed = endDate.diff(kickoffDate, 'week');
         weeksPassed+= endDate.day() * 0.2; //crude approximation assuming each week day is 0.2 of a week
 
@@ -817,7 +822,9 @@ var Trelala = (function(){
         var today = moment();
     var endDate = (!releaseDate || !releaseDate.isValid()) ? today : releaseDate
         while(currentDate <= endDate) {
-            series.push(currentDate);
+            if (isBusinessDay(currentDate))
+                series.push(currentDate);
+
             currentDate = currentDate.clone().add(1, 'day');
         }
 
