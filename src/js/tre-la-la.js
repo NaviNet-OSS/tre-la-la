@@ -519,12 +519,26 @@ var Trelala = (function(){
         var kickoffDate = metaData.meta.kickoffDate;
 
         var endDate = (mvfDoneDate.isValid() && moment() > mvfDoneDate) ? mvfDoneDate : moment();
-        var weeksPassed = endDate.diff(kickoffDate, 'week');
-        weeksPassed+= endDate.day() * 0.2; //crude approximation assuming each week day is 0.2 of a week
 
-        averageStoriesPerWeek = Math.round(storiesCompleted / weeksPassed);
+        var daysPassed = getBusinessDaysDiff(kickoffDate, endDate);
+
+        averageStoriesPerWeek = Math.round(storiesCompleted / (daysPassed * 0.2)); //crude approximation assuming each week day is 0.2 of a week
 
         return averageStoriesPerWeek;
+    }
+
+    function getBusinessDaysDiff(date1, date2){
+        var currentDate = moment(date1);
+        var days = 0;
+
+        while(currentDate <= date2){
+            if (isBusinessDay(currentDate))
+                days++;
+
+            currentDate.add('days', 1);
+        }
+
+        return days;
     }
 
     function drawFrequencyChart(cards, series, targetElement, metaData) {
