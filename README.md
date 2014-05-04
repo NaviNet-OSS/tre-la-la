@@ -51,11 +51,40 @@ If this date is not determined yet, the name of this card can be defined as `Rel
 
 ### User Story Sizing
 
+To do calculaitons of estimated target date and progress, cards on the board need to have size assigned to them. As a convention, each card can have the size of either **Small**, **Medium** or **Large**. Each size represents certain amount of points - those points are used to do estimation and progress calculation (taking points/day team velocity to consideration). The weight (in points) of each size is as follows:
+
+- Small - 1 point
+- Medium - 2 points
+- Large - 4 points
+
+#### Card Naming
+
+To assign a specific size to a card just append [S] (for Small), [M] (for Medium) or [L] (for Large) to the beginning of each card name, eg. _"Feature X" -> "[S] Feature X"_.
+
 ### Private Boards and Trelala Unicorn
+
+In case your Trello board is not public, you will need to add Trello user "Trelala Unicorn" to the list of members to your board (having at least READ permission), so that Trelaal would have access to board data.
 
 ## Available jQuery Plugins
 
+`.trelalaBoardDashboardSummary(boardId)` provides dashboard summary of your board.
+
+`.trelalaBoardSummary(boardId)` provides expanded summary of your board.
+
+`.trelalaBoardScopeChangeHistory(boardId)` generates a table with the history (card additions and removals) of your board since **Analysis Complete Date**.
+
+`.trelalaBoardCfd(boardId)` generates Cumulative Flow Diagram for your board.
+
+`.trelalaBoardFrequencyChard(boardId)` (I'm sure the misspelling was intentional) generates the Cycle Time Chart for your board.
+
 ## Dependencies
+
+Besides the `tre-la-la.js` reference on the page, below is the list of javascript dependencies required to run Trelala:
+
+    <script src="http://code.jquery.com/jquery-1.11.0.min.js"></script>
+    <script src="http://momentjs.com/downloads/moment.min.js"></script>
+    <script src="https://api.trello.com/1/client.js?key=f5613f90a2a2b7b56334453aeff8f858"></script>
+    <script src="http://code.highcharts.com/highcharts.js"></script>
 
 ## Example Page
 
