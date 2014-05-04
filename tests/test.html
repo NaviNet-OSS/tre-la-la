@@ -10,6 +10,7 @@
     <script>
     var boardId = 'Dw47Ej5u';
     $(document).ready(function() {
+       $('#tre-la-la-dash-status').trelalaBoardDashboardSummary(boardId);
        $('#tre-la-la-status').trelalaBoardSummary(boardId);
        $('#tre-la-la-scope-change-history').trelalaBoardScopeChangeHistory(boardId);
        $('#tre-la-la-cfd').trelalaBoardCfd(boardId);
@@ -19,9 +20,19 @@
 
 </head>
 <body>
-    <div id="tre-la-la-status"></div>
-    <div id="tre-la-la-cfd" style="min-width: 310px; height: 400px; margin: 0 auto"></div>
-    <div id="tre-la-la-scope-change-history"></div>
-    <div id="tre-la-la-frequency-chart"></div>
+  <h1>Dashboard Summary</h1>
+  <div id="tre-la-la-dash-status"></div>
+
+  <h1>Summary</h1>
+  <div id="tre-la-la-status"></div>
+
+  <h1>Cumulative Flow Diagram</h1>
+  <div id="tre-la-la-cfd" style="min-width: 310px; height: 400px; margin: 0 auto"></div>
+
+  <h1>Scope Change History</h1>
+  <div id="tre-la-la-scope-change-history"></div>
+
+  <h1>Cycle Time Chart</h1>
+  <div id="tre-la-la-frequency-chart"></div>
 </body>
 </html>
