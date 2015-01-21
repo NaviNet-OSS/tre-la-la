@@ -981,7 +981,7 @@ $.fn.trelalaBoardDashboardSummary = function(boardId) {
                     '<td>' +
                         '<div>Confidence: <b>' + data.confidence + '</b></div>' +
                         '<div>Projected Date: <b>' + moment(data.projectedDoneDate).format("MM/DD/YYYY") + '</b></div>' +
-                        '<div>Target Date: <b>' + moment(data.releaseReadyDate).format("MM/DD/YYYY") + '</b></div>' +
+                        '<div>Target Date: <b>' + data.releaseReadyDate + '</b></div>' +
                     '</td>' +
                 '</tr>' +
             '</table>'
