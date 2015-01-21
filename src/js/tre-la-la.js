@@ -870,7 +870,15 @@ var Trelala = (function(){
                         teamVelocity = match[1];
                     }
 
+                    // This field is deprecated - renamed to "Target Date", keeping it here for
+                    // backwards compatibility
                     match = card.name.match(/^Release\ Ready\ Date:\ (.*)$/);
+                    if (match != null && match.length >= 2) {
+                        releaseReadyDate = match[1];
+                    }
+
+                    // Replaced "Release Rasy Date"
+                    match = card.name.match(/^Target\ Date:\ (.*)$/);
                     if (match != null && match.length >= 2) {
                         releaseReadyDate = match[1];
                     }
@@ -930,7 +938,7 @@ $.fn.trelalaBoardSummary = function(boardId) {
                     '<td id=\'' + completeId + '\' rowspan=\'4\'></td> ' +
                     '<td>Confidence: <b>' + data.confidence + '</b></td>' +
                     '<td width=\'5px\'></td>' +
-                    '<td>Target date: <b>' + moment(data.projectedDoneDate).format("MM/DD/YYYY") + '</b></td> ' +
+                    '<td>Projected Date: <b>' + moment(data.projectedDoneDate).format("MM/DD/YYYY") + '</b></td> ' +
                     '<td width=\'5px\'></td>' +
                     '<td>Planned Story Units: <b>' + data.plannedStoryUnits + '</b></td> ' +
                 '</tr>' +
@@ -944,7 +952,7 @@ $.fn.trelalaBoardSummary = function(boardId) {
                 '<tr>' +
                     '<td>&nbsp;</td>' +
                     '<td width=\'5px\'></td>' +
-                    '<td>Release Ready Date: <b>' + data.releaseReadyDate + '</b></td> ' +
+                    '<td>Target Date: <b>' + data.releaseReadyDate + '</b></td> ' +
                     '<td width=\'5px\'></td>' +
                     '<td>Story Units Complete: <b>' + data.storyUnitsComplete + '</b></td> ' +
                 '</tr>' +
@@ -972,8 +980,8 @@ $.fn.trelalaBoardDashboardSummary = function(boardId) {
                     '<td id=\'' + completeId + '\'></td> ' +
                     '<td>' +
                         '<div>Confidence: <b>' + data.confidence + '</b></div>' +
-                        '<div>Kickoff Date: <b>' + moment(data.kickoffDate).format("MM/DD/YYYY") + '</b></div>' +
-                        '<div>Target Date: <b>' + moment(data.projectedDoneDate).format("MM/DD/YYYY") + '</b></div>' +
+                        '<div>Projected Date: <b>' + moment(data.projectedDoneDate).format("MM/DD/YYYY") + '</b></div>' +
+                        '<div>Target Date: <b>' + moment(data.releaseReadyDate).format("MM/DD/YYYY") + '</b></div>' +
                     '</td>' +
                 '</tr>' +
             '</table>'

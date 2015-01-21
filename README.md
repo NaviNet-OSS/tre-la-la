@@ -59,7 +59,7 @@ To do calculaitons of estimated target date and progress, cards on the board nee
 
 #### Card Naming
 
-To assign a specific size to a card just append [S] (for Small), [M] (for Medium) or [L] (for Large) to the beginning of each card name, eg. _"Feature X" -> "[S] Feature X"_.
+To assign a specific size to a card just append \[S\] (for Small), \[M\] (for Medium) or \[L\] (for Large) to the beginning of each card name, eg. _"Feature X" -> "[S] Feature X"_.
 
 ### Private Boards and Trelala Unicorn
 
