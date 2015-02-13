@@ -6,9 +6,9 @@ Trelala is a set of jquery plugins to extract statistics from a [Trello](http://
 
 # Usage
 
-## Trello Board Setup
+## Trello Board Setup and Example Board
 
-There are a few conventions that need to be followed to be able to use Trelala with your Trello kanban board.
+There are a few conventions that need to be followed to be able to use Trelala with your Trello kanban board. Example board can be found here: https://trello.com/b/W30dtT1k/trelala-template
 
 ### Standard Columns (aka Trello Lists)
 
@@ -41,8 +41,8 @@ If this date is not determined yet, the name of this card can be defined as `Ana
 **Team Velocity (Points/Day): [how many story points does your team complete per day?]**  
 Example: `Team Velocity (Points/Day): 1.2`  
 
-**Release Ready Date: [date when MVF/project is projected (by the team) to be release ready]**  
-Example: `Release Ready Date: 12/31/2013`  
+**Target Date: [date when MVF/project is commited (by the team) to be release ready]**  
+Example: `Target Date: 12/31/2013`  
 If this date is not determined yet, the name of this card can be defined as `Release Ready Date: TBD`
 
 **Released On: [date when MVF/project was actually released]**  
