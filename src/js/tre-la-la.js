@@ -81,7 +81,7 @@ var Trelala = (function(){
     }
 
     function isActiveCol(list) {
-        return list != null
+        return list != null && list.name != null
             && (list.name.indexOf('Analysis Complete') != -1
                 || list.name.indexOf('Design') != -1
                 || list.name.indexOf('Implementation') != -1
